@@ -4,24 +4,24 @@ import { useState } from 'react';
 
 export default function AuthorDashboard() {
   const [seriesName, setSeriesName] = useState('');
+  const [chapterTitle, setChapterTitle] = useState('');
   const [chapterNum, setChapterNum] = useState('');
-  const [files, setFiles] = useState([]);
+  const [pdfFile, setPdfFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!files.length) return alert('Please select chapter images to upload.');
+    if (!pdfFile) return alert('Please select a PDF file for this chapter.');
 
     setUploading(true);
-    setStatusMessage('Uploading and processing chapter...');
+    setStatusMessage('Uploading and converting chapter pages...');
 
     const formData = new FormData();
     formData.append('series', seriesName);
     formData.append('chapter', chapterNum);
-    for (let i = 0; i < files.length; i++) {
-      formData.append('images', files[i]);
-    }
+    formData.append('title', chapterTitle);
+    formData.append('pdf', pdfFile);
 
     try {
       const res = await fetch('/api/upload', {
@@ -30,14 +30,15 @@ export default function AuthorDashboard() {
       });
 
       const data = await res.json();
+
       if (data.success) {
-        setStatusMessage(`✅ Chapter ${chapterNum} uploaded successfully!`);
-        setFiles([]);
+        setStatusMessage(`✅ Chapter ${chapterNum} uploaded successfully! (${data.pageCount} pages)`);
+        setPdfFile(null);
       } else {
-        setStatusMessage('❌ Upload failed.');
+        setStatusMessage(`❌ Upload failed: ${data.error || 'Unknown error'}`);
       }
     } catch (err) {
-      setStatusMessage('❌ Error submitting files.');
+      setStatusMessage('❌ Error submitting the PDF.');
     } finally {
       setUploading(false);
     }
@@ -59,7 +60,7 @@ export default function AuthorDashboard() {
             placeholder="e.g. Shadow Monarch"
             value={seriesName}
             onChange={(e) => setSeriesName(e.target.value)}
-            className="w-full bg-slate-100 text-black border border-slate-300 rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-neutral-500"
+            className="w-full bg-slate-100 text-black border border-slate-300 rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -71,19 +72,31 @@ export default function AuthorDashboard() {
             placeholder="e.g. 5"
             value={chapterNum}
             onChange={(e) => setChapterNum(e.target.value)}
-            className="w-full bg-slate-100 text-black border border-slate-300 rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-neutral-500"
+            className="w-full bg-slate-100 text-black border border-slate-300 rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-300 mb-1">Select Pages (PNG, JPG, WEBP)</label>
+          <label className="block text-xs font-medium text-neutral-300 mb-1">Chapter Title</label>
+          <input
+            type="text"
+            required
+            placeholder="e.g. The Return"
+            value={chapterTitle}
+            onChange={(e) => setChapterTitle(e.target.value)}
+            className="w-full bg-slate-100 text-black border border-slate-300 rounded p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-neutral-300 mb-1">Chapter PDF</label>
           <input
             type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => setFiles(e.target.files)}
-            className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+            accept="application/pdf"
+            onChange={(e) => setPdfFile(e.target.files[0])}
+            className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white"
           />
+          {pdfFile && <span className="text-xs text-neutral-400">{pdfFile.name} selected</span>}
         </div>
 
         <button

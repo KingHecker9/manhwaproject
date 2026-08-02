@@ -1,8 +1,7 @@
 import Link from 'next/link';
 
-export default function SeriesDetailPage({ params }) {
-  const { id } = params;
-
+export default async function SeriesDetailPage({ params }) {
+const { id } = await params;
   // Mock list of chapters for the selected series
   const chapters = Array.from({ length: 12 }, (_, i) => ({
     number: i + 1,
