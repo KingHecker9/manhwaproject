@@ -8,6 +8,8 @@ const nextConfig = {
       },
     ],
   },
+  serverExternalPackages: ['pdfjs-dist', 'pdf-to-png-converter', 'canvas'],
+  allowedDevOrigins: ['192.168.137.1', '10.17.132.248'],
 };
 
 export default nextConfig;
