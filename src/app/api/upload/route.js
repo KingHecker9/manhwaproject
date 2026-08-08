@@ -23,6 +23,7 @@ export async function POST(request) {
     const chapterNum = formData.get("chapter");
     const chapterTitle = formData.get("title");
     const pdfFile = formData.get("pdf");
+    const coverFile = formData.get("cover"); // optional
 
     if (!seriesName || !chapterNum || !chapterTitle || !pdfFile) {
       return NextResponse.json(
@@ -41,9 +42,30 @@ export async function POST(request) {
       .single();
 
     if (!series) {
+      let coverUrl = null;
+
+      if (coverFile) {
+        const coverExt = coverFile.name.split(".").pop();
+        const coverPath = `covers/${slug}.${coverExt}`;
+        const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
+
+        const { error: coverUploadError } = await supabaseAdmin.storage
+          .from("manhwa-pages")
+          .upload(coverPath, coverBuffer, {
+            contentType: coverFile.type,
+            upsert: true,
+          });
+        if (coverUploadError) throw coverUploadError;
+
+        const { data: coverUrlData } = supabaseAdmin.storage
+          .from("manhwa-pages")
+          .getPublicUrl(coverPath);
+        coverUrl = coverUrlData.publicUrl;
+      }
+
       const { data: newSeries, error: seriesError } = await supabaseAdmin
         .from("series")
-        .insert({ title: seriesName, slug, author_id: authorId })
+        .insert({ title: seriesName, slug, author_id: authorId, cover_url: coverUrl })
         .select("id")
         .single();
       if (seriesError) throw seriesError;

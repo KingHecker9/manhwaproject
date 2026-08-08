@@ -7,6 +7,7 @@ export default function AuthorDashboardForm() {
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterNum, setChapterNum] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
@@ -22,6 +23,7 @@ export default function AuthorDashboardForm() {
     formData.append('chapter', chapterNum);
     formData.append('title', chapterTitle);
     formData.append('pdf', pdfFile);
+    if (coverFile) formData.append('cover', coverFile);
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -30,6 +32,7 @@ export default function AuthorDashboardForm() {
       if (data.success) {
         setStatusMessage(`Chapter ${chapterNum} uploaded successfully (${data.pageCount} pages)`);
         setPdfFile(null);
+        setCoverFile(null);
       } else {
         setStatusMessage(`Upload failed: ${data.error || 'Unknown error'}`);
       }
@@ -105,6 +108,19 @@ export default function AuthorDashboardForm() {
               className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:bg-indigo-600 file:text-white file:cursor-pointer cursor-pointer"
             />
             {pdfFile && <span className="text-xs text-neutral-500 mt-1 block">{pdfFile.name} selected</span>}
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
+              Series Cover (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setCoverFile(e.target.files[0])}
+              className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:bg-indigo-600 file:text-white file:cursor-pointer cursor-pointer"
+            />
+            {coverFile && <span className="text-xs text-neutral-500 mt-1 block">{coverFile.name} selected</span>}
           </div>
 
           <button
