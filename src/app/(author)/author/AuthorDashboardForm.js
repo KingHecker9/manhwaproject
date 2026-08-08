@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { supabaseClient } from '../../../lib/supabase-client';
 
 export default function AuthorDashboardForm() {
   const [seriesName, setSeriesName] = useState('');
@@ -16,16 +17,35 @@ export default function AuthorDashboardForm() {
     if (!pdfFile) return alert('Please select a PDF file for this chapter.');
 
     setUploading(true);
-    setStatusMessage('Uploading and converting chapter pages...');
-
-    const formData = new FormData();
-    formData.append('series', seriesName);
-    formData.append('chapter', chapterNum);
-    formData.append('title', chapterTitle);
-    formData.append('pdf', pdfFile);
-    if (coverFile) formData.append('cover', coverFile);
 
     try {
+      // 1. Upload the PDF directly to Supabase Storage from the browser
+      // (bypasses Vercel's function body-size limit)
+      setStatusMessage('Uploading PDF...');
+
+      const slug = seriesName.toLowerCase().trim().replace(/\s+/g, '-');
+      const pdfPath = `temp-pdfs/${slug}-ch${chapterNum}-${Date.now()}.pdf`;
+
+      const { error: pdfUploadError } = await supabaseClient.storage
+        .from('manhwa-pages')
+        .upload(pdfPath, pdfFile, { contentType: 'application/pdf' });
+
+      if (pdfUploadError) {
+        setStatusMessage(`PDF upload failed: ${pdfUploadError.message}`);
+        setUploading(false);
+        return;
+      }
+
+      // 2. Tell the server to process the PDF now sitting in Storage
+      setStatusMessage('Converting and publishing chapter pages...');
+
+      const formData = new FormData();
+      formData.append('series', seriesName);
+      formData.append('chapter', chapterNum);
+      formData.append('title', chapterTitle);
+      formData.append('pdfPath', pdfPath);
+      if (coverFile) formData.append('cover', coverFile);
+
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
 

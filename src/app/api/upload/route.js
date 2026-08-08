@@ -6,7 +6,7 @@ import { pdfToPng } from "pdf-to-png-converter";
 
 export async function POST(request) {
   try {
-    // 1. Auth check server-side (form doesn't send authorId)
+    // 1. Auth check server-side
     const session = await auth0.getSession();
     if (!session) {
       return NextResponse.json({ error: "Not signed in" }, { status: 401 });
@@ -17,15 +17,15 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not an author" }, { status: 403 });
     }
 
-    // 2. Parse form
+    // 2. Parse form (small fields + a path, not the raw PDF anymore)
     const formData = await request.formData();
     const seriesName = formData.get("series");
     const chapterNum = formData.get("chapter");
     const chapterTitle = formData.get("title");
-    const pdfFile = formData.get("pdf");
-    const coverFile = formData.get("cover"); // optional
+    const pdfPath = formData.get("pdfPath"); // path in Storage, uploaded client-side
+    const coverFile = formData.get("cover"); // optional, small enough to send directly
 
-    if (!seriesName || !chapterNum || !chapterTitle || !pdfFile) {
+    if (!seriesName || !chapterNum || !chapterTitle || !pdfPath) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -84,9 +84,15 @@ export async function POST(request) {
       .single();
     if (chapterError) throw chapterError;
 
-    // 5. Rasterize PDF pages to PNG buffers
-    const pdfBytes = Buffer.from(await pdfFile.arrayBuffer());
+    // 5. Download the PDF from Storage (server-side, no size limit here)
+    const { data: pdfBlob, error: pdfDownloadError } = await supabaseAdmin.storage
+      .from("manhwa-pages")
+      .download(pdfPath);
+    if (pdfDownloadError) throw pdfDownloadError;
 
+    const pdfBytes = Buffer.from(await pdfBlob.arrayBuffer());
+
+    // 6. Rasterize PDF pages to PNG buffers
     const pngPages = await pdfToPng(pdfBytes, {
       viewportScale: 2.0,
     });
@@ -120,6 +126,9 @@ export async function POST(request) {
       .from("pages")
       .insert(pageInserts);
     if (pagesError) throw pagesError;
+
+    // 7. Clean up the temp PDF now that we're done with it
+    await supabaseAdmin.storage.from("manhwa-pages").remove([pdfPath]);
 
     return NextResponse.json({
       success: true,
