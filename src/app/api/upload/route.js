@@ -3,7 +3,11 @@ import { auth0 } from "../../../lib/auth0";
 import { isAuthor } from "../../../lib/auth0-roles";
 import { supabaseAdmin } from "../../../lib/supabase-admin";
 import { pdfToPng } from "pdf-to-png-converter";
+import { DOMMatrix } from "canvas";
 
+if (typeof globalThis.DOMMatrix === "undefined") {
+  globalThis.DOMMatrix = DOMMatrix;
+}
 export async function POST(request) {
   try {
     // 1. Auth check server-side
@@ -65,7 +69,12 @@ export async function POST(request) {
 
       const { data: newSeries, error: seriesError } = await supabaseAdmin
         .from("series")
-        .insert({ title: seriesName, slug, author_id: authorId, cover_url: coverUrl })
+        .insert({
+          title: seriesName,
+          slug,
+          author_id: authorId,
+          cover_url: coverUrl,
+        })
         .select("id")
         .single();
       if (seriesError) throw seriesError;
@@ -85,9 +94,8 @@ export async function POST(request) {
     if (chapterError) throw chapterError;
 
     // 5. Download the PDF from Storage (server-side, no size limit here)
-    const { data: pdfBlob, error: pdfDownloadError } = await supabaseAdmin.storage
-      .from("manhwa-pages")
-      .download(pdfPath);
+    const { data: pdfBlob, error: pdfDownloadError } =
+      await supabaseAdmin.storage.from("manhwa-pages").download(pdfPath);
     if (pdfDownloadError) throw pdfDownloadError;
 
     const pdfBytes = Buffer.from(await pdfBlob.arrayBuffer());
