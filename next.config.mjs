@@ -10,10 +10,8 @@ const nextConfig = {
   },
   serverExternalPackages: ['pdfjs-dist', 'pdf-to-png-converter', 'canvas'],
   allowedDevOrigins: ['192.168.137.1', '10.154.129.248'],
-  experimental: {
-    outputFileTracingIncludes: {
-      '/api/upload': ['./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'],
-    },
+  outputFileTracingIncludes: {
+    '/api/upload': ['./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'],
   },
 };
 
