@@ -10,11 +10,8 @@
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.26.0",
-    "@napi-rs/canvas": "^1.0.3",
     "@supabase/supabase-js": "^2.112.1",
-    "canvas": "^3.2.3",
     "next": "16.2.10",
-    "pdf-to-png-converter": "^4.2.0",
     "pdfjs-dist": "^6.2.108",
     "react": "19.2.4",
     "react-dom": "19.2.4"

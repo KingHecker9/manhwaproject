@@ -1,0 +1,126 @@
+[33mcommit 54cfba594ab3275305bb6a4e723d355b0a868283[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: KingHecker9 <ryankwame9@gmail.com>
+Date:   Sat Aug 8 06:14:48 2026 +0000
+
+    Add missing @napi-rs/canvas dependency for pdfjs-dist
+
+[1mdiff --git a/package.json b/package.json[m
+[1mindex 2cc7b73..d6162be 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -10,6 +10,7 @@[m
+   },[m
+   "dependencies": {[m
+     "@auth0/nextjs-auth0": "^4.26.0",[m
+[32m+[m[32m    "@napi-rs/canvas": "^1.0.3",[m
+     "@supabase/supabase-js": "^2.112.1",[m
+     "canvas": "^3.2.3",[m
+     "next": "16.2.10",[m
+
+[33mcommit 7b941888a67b673143e970815e9018bf5cfa25d9[m
+Author: KingHecker9 <ryankwame9@gmail.com>
+Date:   Thu Aug 6 23:12:42 2026 +0000
+
+    Add Supabase integration, reader, and upload pipeline
+
+[1mdiff --git a/package.json b/package.json[m
+[1mindex 6f82fcb..2cc7b73 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -9,9 +9,12 @@[m
+     "lint": "eslint"[m
+   },[m
+   "dependencies": {[m
+[31m-    "@auth0/nextjs-auth0": "^4.25.0",[m
+[32m+[m[32m    "@auth0/nextjs-auth0": "^4.26.0",[m
+[32m+[m[32m    "@supabase/supabase-js": "^2.112.1",[m
+[32m+[m[32m    "canvas": "^3.2.3",[m
+     "next": "16.2.10",[m
+     "pdf-to-png-converter": "^4.2.0",[m
+[32m+[m[32m    "pdfjs-dist": "^6.2.108",[m
+     "react": "19.2.4",[m
+     "react-dom": "19.2.4"[m
+   },[m
+
+[33mcommit 14460f2768342d043fdbee7acb199f894acf0ed6[m
+Author: KingHecker9 <ryankwame9@gmail.com>
+Date:   Sun Aug 2 19:16:11 2026 +0000
+
+    Landing page redesign, responsive layout, PDF upload/conversion pipeline
+
+[1mdiff --git a/package.json b/package.json[m
+[1mindex bf6463d..6f82fcb 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -11,9 +11,9 @@[m
+   "dependencies": {[m
+     "@auth0/nextjs-auth0": "^4.25.0",[m
+     "next": "16.2.10",[m
+[32m+[m[32m    "pdf-to-png-converter": "^4.2.0",[m
+     "react": "19.2.4",[m
+[31m-    "react-dom": "19.2.4",[m
+[31m-    "react-paystack": "^6.0.0"[m
+[32m+[m[32m    "react-dom": "19.2.4"[m
+   },[m
+   "devDependencies": {[m
+     "@tailwindcss/postcss": "^4",[m
+
+[33mcommit 1ff90368b5f046440b0804f3a314a62b2fbd59c3[m
+Author: KingHecker9 <ryankwame9@gmail.com>
+Date:   Wed Jul 22 01:08:06 2026 +0000
+
+    checkpoint before proxy migration
+
+[1mdiff --git a/package.json b/package.json[m
+[1mindex 7309d60..bf6463d 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -9,9 +9,11 @@[m
+     "lint": "eslint"[m
+   },[m
+   "dependencies": {[m
+[32m+[m[32m    "@auth0/nextjs-auth0": "^4.25.0",[m
+     "next": "16.2.10",[m
+     "react": "19.2.4",[m
+[31m-    "react-dom": "19.2.4"[m
+[32m+[m[32m    "react-dom": "19.2.4",[m
+[32m+[m[32m    "react-paystack": "^6.0.0"[m
+   },[m
+   "devDependencies": {[m
+     "@tailwindcss/postcss": "^4",[m
+
+[33mcommit ef2f92b3ffcb97c30325c9b71d842d70bdcc1491[m
+Author: KingHecker9 <ryankwame9@gmail.com>
+Date:   Mon Jul 20 22:13:41 2026 +0000
+
+    Initial commit from Create Next App
+
+[1mdiff --git a/package.json b/package.json[m
+[1mnew file mode 100644[m
+[1mindex 0000000..7309d60[m
+[1m--- /dev/null[m
+[1m+++ b/package.json[m
+[36m@@ -0,0 +1,23 @@[m
+[32m+[m[32m{[m
+[32m+[m[32m  "name": "manhwa-reader",[m
+[32m+[m[32m  "version": "0.1.0",[m
+[32m+[m[32m  "private": true,[m
+[32m+[m[32m  "scripts": {[m
+[32m+[m[32m    "dev": "next dev",[m
+[32m+[m[32m    "build": "next build",[m
+[32m+[m[32m    "start": "next start",[m
+[32m+[m[32m    "lint": "eslint"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  "dependencies": {[m
+[32m+[m[32m    "next": "16.2.10",[m
+[32m+[m[32m    "react": "19.2.4",[m
+[32m+[m[32m    "react-dom": "19.2.4"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  "devDependencies": {[m
+[32m+[m[32m    "@tailwindcss/postcss": "^4",[m
+[32m+[m[32m    "babel-plugin-react-compiler": "1.0.0",[m
+[32m+[m[32m    "eslint": "^9",[m
+[32m+[m[32m    "eslint-config-next": "16.2.10",[m
+[32m+[m[32m    "tailwindcss": "^4"[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m

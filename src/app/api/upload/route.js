@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import { auth0 } from "../../../lib/auth0";
 import { isAuthor } from "../../../lib/auth0-roles";
 import { supabaseAdmin } from "../../../lib/supabase-admin";
-import { pdfToPng } from "pdf-to-png-converter";
-import { DOMMatrix } from "canvas";
 
-if (typeof globalThis.DOMMatrix === "undefined") {
-  globalThis.DOMMatrix = DOMMatrix;
-}
 export async function POST(request) {
   try {
     // 1. Auth check server-side
@@ -21,20 +16,22 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not an author" }, { status: 403 });
     }
 
-    // 2. Parse form (small fields + a path, not the raw PDF anymore)
+    // 2. Parse form
     const formData = await request.formData();
     const seriesName = formData.get("series");
     const chapterNum = formData.get("chapter");
     const chapterTitle = formData.get("title");
-    const pdfPath = formData.get("pdfPath"); // path in Storage, uploaded client-side
-    const coverFile = formData.get("cover"); // optional, small enough to send directly
+    const pagePathsRaw = formData.get("pagePaths"); // JSON array of Storage paths, already uploaded client-side
+    const coverFile = formData.get("cover"); // optional
 
-    if (!seriesName || !chapterNum || !chapterTitle || !pdfPath) {
+    if (!seriesName || !chapterNum || !chapterTitle || !pagePathsRaw) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
+
+    const pagePaths = JSON.parse(pagePathsRaw);
 
     // 3. Find or create series
     const slug = seriesName.toLowerCase().trim().replace(/\s+/g, "-");
@@ -69,12 +66,7 @@ export async function POST(request) {
 
       const { data: newSeries, error: seriesError } = await supabaseAdmin
         .from("series")
-        .insert({
-          title: seriesName,
-          slug,
-          author_id: authorId,
-          cover_url: coverUrl,
-        })
+        .insert({ title: seriesName, slug, author_id: authorId, cover_url: coverUrl })
         .select("id")
         .single();
       if (seriesError) throw seriesError;
@@ -93,35 +85,22 @@ export async function POST(request) {
       .single();
     if (chapterError) throw chapterError;
 
-    // 5. Download the PDF from Storage (server-side, no size limit here)
-    const { data: pdfBlob, error: pdfDownloadError } =
-      await supabaseAdmin.storage.from("manhwa-pages").download(pdfPath);
-    if (pdfDownloadError) throw pdfDownloadError;
-
-    const pdfBytes = Buffer.from(await pdfBlob.arrayBuffer());
-
-    // 6. Rasterize PDF pages to PNG buffers
-    const pngPages = await pdfToPng(pdfBytes, {
-      viewportScale: 2.0,
-    });
-
+    // 5. Move each already-uploaded page from temp-pages/ to its final path, insert DB rows
     const pageInserts = [];
 
-    for (let i = 0; i < pngPages.length; i++) {
+    for (let i = 0; i < pagePaths.length; i++) {
       const pageNum = i + 1;
-      const filePath = `${series.id}/${chapter.id}/page-${pageNum}.png`;
+      const tempPath = pagePaths[i];
+      const finalPath = `${series.id}/${chapter.id}/page-${pageNum}.jpg`;
 
-      const { error: uploadError } = await supabaseAdmin.storage
+      const { error: moveError } = await supabaseAdmin.storage
         .from("manhwa-pages")
-        .upload(filePath, pngPages[i].content, {
-          contentType: "image/png",
-          upsert: true,
-        });
-      if (uploadError) throw uploadError;
+        .move(tempPath, finalPath);
+      if (moveError) throw moveError;
 
       const { data: publicUrlData } = supabaseAdmin.storage
         .from("manhwa-pages")
-        .getPublicUrl(filePath);
+        .getPublicUrl(finalPath);
 
       pageInserts.push({
         chapter_id: chapter.id,
@@ -134,9 +113,6 @@ export async function POST(request) {
       .from("pages")
       .insert(pageInserts);
     if (pagesError) throw pagesError;
-
-    // 7. Clean up the temp PDF now that we're done with it
-    await supabaseAdmin.storage.from("manhwa-pages").remove([pdfPath]);
 
     return NextResponse.json({
       success: true,

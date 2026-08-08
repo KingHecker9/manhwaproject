@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { supabaseClient } from '../../../lib/supabase-client';
+import * as pdfjsLib from 'pdfjs-dist';
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 export default function AuthorDashboardForm() {
   const [seriesName, setSeriesName] = useState('');
   const [chapterTitle, setChapterTitle] = useState('');
@@ -19,31 +21,52 @@ export default function AuthorDashboardForm() {
     setUploading(true);
 
     try {
-      // 1. Upload the PDF directly to Supabase Storage from the browser
-      // (bypasses Vercel's function body-size limit)
-      setStatusMessage('Uploading PDF...');
-
       const slug = seriesName.toLowerCase().trim().replace(/\s+/g, '-');
-      const pdfPath = `temp-pdfs/${slug}-ch${chapterNum}-${Date.now()}.pdf`;
 
-      const { error: pdfUploadError } = await supabaseClient.storage
-        .from('manhwa-pages')
-        .upload(pdfPath, pdfFile, { contentType: 'application/pdf' });
+      // 1. Load the PDF in-browser
+      setStatusMessage('Reading PDF...');
+      const pdfBytes = await pdfFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
 
-      if (pdfUploadError) {
-        setStatusMessage(`PDF upload failed: ${pdfUploadError.message}`);
-        setUploading(false);
-        return;
+      // 2. Render each page to canvas, convert to JPEG, upload to Storage
+      const pageUrls = [];
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        setStatusMessage(`Rendering page ${i} of ${pdf.numPages}...`);
+
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, 'image/jpeg', 0.85)
+        );
+
+        const pagePath = `temp-pages/${slug}-ch${chapterNum}-${Date.now()}-page${i}.jpg`;
+
+        const { error: pageUploadError } = await supabaseClient.storage
+          .from('manhwa-pages')
+          .upload(pagePath, blob, { contentType: 'image/jpeg' });
+
+        if (pageUploadError) throw new Error(`Page ${i} upload failed: ${pageUploadError.message}`);
+
+        pageUrls.push(pagePath);
       }
 
-      // 2. Tell the server to process the PDF now sitting in Storage
-      setStatusMessage('Converting and publishing chapter pages...');
+      // 3. Tell the server the pages are ready — it just creates DB rows now
+      setStatusMessage('Finalizing chapter...');
 
       const formData = new FormData();
       formData.append('series', seriesName);
       formData.append('chapter', chapterNum);
       formData.append('title', chapterTitle);
-      formData.append('pdfPath', pdfPath);
+      formData.append('pagePaths', JSON.stringify(pageUrls));
       if (coverFile) formData.append('cover', coverFile);
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -57,7 +80,8 @@ export default function AuthorDashboardForm() {
         setStatusMessage(`Upload failed: ${data.error || 'Unknown error'}`);
       }
     } catch (err) {
-      setStatusMessage('Error submitting the PDF.');
+      console.error(err);
+      setStatusMessage(`Error: ${err.message}`);
     } finally {
       setUploading(false);
     }
