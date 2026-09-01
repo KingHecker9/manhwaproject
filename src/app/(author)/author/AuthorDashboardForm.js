@@ -35,7 +35,7 @@ export default function AuthorDashboardForm() {
         setStatusMessage(`Rendering page ${i} of ${pdf.numPages}...`);
 
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
+        const viewport = page.getViewport({ scale: 1.5 });
 
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
@@ -45,7 +45,7 @@ export default function AuthorDashboardForm() {
         await page.render({ canvasContext: ctx, viewport }).promise;
 
         const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, 'image/jpeg', 0.85)
+          canvas.toBlob(resolve, 'image/jpeg', 0.75)
         );
 
         const pagePath = `temp-pages/${slug}-ch${chapterNum}-${Date.now()}-page${i}.jpg`;

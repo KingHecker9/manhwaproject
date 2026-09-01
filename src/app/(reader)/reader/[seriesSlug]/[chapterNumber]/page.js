@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../../../../../lib/supabase-admin";
 import { notFound } from "next/navigation";
+import Image from 'next/image';
 
 export default async function ReaderPage({ params }) {
   const { seriesSlug, chapterNumber } = await params;
@@ -43,12 +44,14 @@ export default async function ReaderPage({ params }) {
 
       <div className="max-w-3xl mx-auto flex flex-col">
         {pages.map((page) => (
-          <img
+          <Image
             key={page.page_number}
             src={page.image_url}
             alt={`Page ${page.page_number}`}
-            className="w-full block"
-            loading="lazy"
+            width={800}
+            height={1200}
+            className="w-full h-auto block"
+            sizes="(max-width: 768px) 100vw, 768px"
           />
         ))}
       </div>

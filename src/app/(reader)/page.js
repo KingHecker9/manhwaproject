@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "../../lib/supabase-admin";
 import CatalogClient from './CatalogClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function CatalogPage() {
   const { data: seriesList } = await supabaseAdmin
