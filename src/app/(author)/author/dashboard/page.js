@@ -1,5 +1,5 @@
-import { auth0 } from '../../../../../lib/auth0';
-import { isAuthor } from '../../../../../lib/auth0-roles';
+import { auth0 } from '../../../../lib/auth0';
+import { isAuthor } from '../../../../lib/auth0-roles';
 import AuthorDashboardForm from '../AuthorDashboardForm';
 
 export default async function AuthorDashboardPage() {
