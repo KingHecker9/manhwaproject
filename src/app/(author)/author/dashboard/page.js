@@ -1,5 +1,6 @@
 import { auth0 } from '../../../../lib/auth0';
 import { isAuthor } from '../../../../lib/auth0-roles';
+import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import AuthorDashboardForm from '../AuthorDashboardForm';
 
 export default async function AuthorDashboardPage() {
@@ -13,7 +14,7 @@ export default async function AuthorDashboardPage() {
           You need to log in as an author to access this page.
         </p>
         
-          <a href="/auth/login?returnTo=/author/dashboard"
+         <a href="/auth/login?returnTo=/author/dashboard"
           className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold"
         >
           Log In
@@ -36,5 +37,12 @@ export default async function AuthorDashboardPage() {
     );
   }
 
-  return <AuthorDashboardForm />;
+  // Fetch this author's existing series so they can pick from a dropdown
+  const { data: existingSeries } = await supabaseAdmin
+    .from("series")
+    .select("id, title, slug")
+    .eq("author_id", session.user.sub)
+    .order("title", { ascending: true });
+
+  return <AuthorDashboardForm existingSeries={existingSeries || []} />;
 }

@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { supabaseClient } from '../../../lib/supabase-client';
-import * as pdfjsLib from 'pdfjs-dist';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-export default function AuthorDashboardForm() {
-  const [seriesName, setSeriesName] = useState('');
+
+export default function AuthorDashboardForm({ existingSeries = [] }) {
+  const [selectedSeriesSlug, setSelectedSeriesSlug] = useState(
+    existingSeries.length > 0 ? existingSeries[0].slug : '__new__'
+  );
+  const [newSeriesName, setNewSeriesName] = useState('');
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterNum, setChapterNum] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
@@ -14,9 +16,17 @@ export default function AuthorDashboardForm() {
   const [uploading, setUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
+  const isNewSeries = selectedSeriesSlug === '__new__';
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!pdfFile) return alert('Please select a PDF file for this chapter.');
+
+    const seriesName = isNewSeries
+      ? newSeriesName
+      : existingSeries.find((s) => s.slug === selectedSeriesSlug)?.title;
+
+    if (!seriesName) return alert('Please enter or select a series.');
 
     setUploading(true);
 
@@ -59,7 +69,7 @@ export default function AuthorDashboardForm() {
         pageUrls.push(pagePath);
       }
 
-      // 3. Tell the server the pages are ready — it just creates DB rows now
+      // 3. Tell the server the pages are ready
       setStatusMessage('Finalizing chapter...');
 
       const formData = new FormData();
@@ -67,15 +77,18 @@ export default function AuthorDashboardForm() {
       formData.append('chapter', chapterNum);
       formData.append('title', chapterTitle);
       formData.append('pagePaths', JSON.stringify(pageUrls));
-      if (coverFile) formData.append('cover', coverFile);
+      if (isNewSeries && coverFile) formData.append('cover', coverFile);
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
 
       if (data.success) {
         setStatusMessage(`Chapter ${chapterNum} uploaded successfully (${data.pageCount} pages)`);
+        setChapterTitle('');
+        setChapterNum('');
         setPdfFile(null);
         setCoverFile(null);
+        // Keep the series selection as-is so you can immediately upload the next chapter
       } else {
         setStatusMessage(`Upload failed: ${data.error || 'Unknown error'}`);
       }
@@ -101,17 +114,35 @@ export default function AuthorDashboardForm() {
         <form onSubmit={handleUpload} className="bg-neutral-900 border border-neutral-800 p-6 space-y-5">
           <div>
             <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-              Series Title
+              Series
             </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Shadow Monarch"
-              value={seriesName}
-              onChange={(e) => setSeriesName(e.target.value)}
+            <select
+              value={selectedSeriesSlug}
+              onChange={(e) => setSelectedSeriesSlug(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 text-white p-2.5 text-sm focus:outline-none focus:border-indigo-500"
-            />
+            >
+              {existingSeries.map((s) => (
+                <option key={s.slug} value={s.slug}>{s.title}</option>
+              ))}
+              <option value="__new__">+ Add new series</option>
+            </select>
           </div>
+
+          {isNewSeries && (
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
+                New Series Title
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Shadow Monarch"
+                value={newSeriesName}
+                onChange={(e) => setNewSeriesName(e.target.value)}
+                className="w-full bg-neutral-950 border border-neutral-800 text-white p-2.5 text-sm focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
@@ -154,18 +185,20 @@ export default function AuthorDashboardForm() {
             {pdfFile && <span className="text-xs text-neutral-500 mt-1 block">{pdfFile.name} selected</span>}
           </div>
 
-          <div>
-            <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-              Series Cover (optional)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setCoverFile(e.target.files[0])}
-              className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:bg-indigo-600 file:text-white file:cursor-pointer cursor-pointer"
-            />
-            {coverFile && <span className="text-xs text-neutral-500 mt-1 block">{coverFile.name} selected</span>}
-          </div>
+          {isNewSeries && (
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
+                Series Cover (optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setCoverFile(e.target.files[0])}
+                className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:bg-indigo-600 file:text-white file:cursor-pointer cursor-pointer"
+              />
+              {coverFile && <span className="text-xs text-neutral-500 mt-1 block">{coverFile.name} selected</span>}
+            </div>
+          )}
 
           <button
             type="submit"
