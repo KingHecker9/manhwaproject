@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { supabaseClient } from '../../../lib/supabase-client';
-
 
 export default function AuthorDashboardForm({ existingSeries = [] }) {
   const [selectedSeriesSlug, setSelectedSeriesSlug] = useState(
@@ -18,6 +16,26 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
   const isNewSeries = selectedSeriesSlug === '__new__';
 
+  // Ask the server for a signed URL, then upload the blob directly to R2
+  const uploadToR2 = async (key, blob, contentType) => {
+    const res = await fetch('/api/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, contentType }),
+    });
+    const { signedUrl, error } = await res.json();
+    if (error) throw new Error(`Failed to get upload URL: ${error}`);
+
+    const uploadRes = await fetch(signedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: blob,
+    });
+    if (!uploadRes.ok) throw new Error(`R2 upload failed: ${uploadRes.status}`);
+
+    return key;
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!pdfFile) return alert('Please select a PDF file for this chapter.');
@@ -31,6 +49,10 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
     setUploading(true);
 
     try {
+      // Load pdfjs-dist dynamically, browser-only — avoids server-side DOMMatrix crash
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
       const slug = seriesName.toLowerCase().trim().replace(/\s+/g, '-');
 
       // 1. Load the PDF in-browser
@@ -38,8 +60,8 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
       const pdfBytes = await pdfFile.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
 
-      // 2. Render each page to canvas, convert to JPEG, upload to Storage
-      const pageUrls = [];
+      // 2. Render each page to canvas, convert to JPEG, upload to R2
+      const pageKeys = [];
 
       for (let i = 1; i <= pdf.numPages; i++) {
         setStatusMessage(`Rendering page ${i} of ${pdf.numPages}...`);
@@ -58,28 +80,37 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
           canvas.toBlob(resolve, 'image/jpeg', 0.75)
         );
 
-        const pagePath = `temp-pages/${slug}-ch${chapterNum}-${Date.now()}-page${i}.jpg`;
+        const pageKey = `temp-pages/${slug}-ch${chapterNum}-${Date.now()}-page${i}.jpg`;
 
-        const { error: pageUploadError } = await supabaseClient.storage
-          .from('manhwa-pages')
-          .upload(pagePath, blob, { contentType: 'image/jpeg' });
+        setStatusMessage(`Uploading page ${i} of ${pdf.numPages}...`);
+        await uploadToR2(pageKey, blob, 'image/jpeg');
 
-        if (pageUploadError) throw new Error(`Page ${i} upload failed: ${pageUploadError.message}`);
-
-        pageUrls.push(pagePath);
+        pageKeys.push(pageKey);
       }
 
-      // 3. Tell the server the pages are ready
+      // 3. Upload cover to R2 if provided (new series only)
+      let coverKey = null;
+      if (isNewSeries && coverFile) {
+        setStatusMessage('Uploading cover...');
+        const coverExt = coverFile.name.split('.').pop();
+        coverKey = `covers/${slug}.${coverExt}`;
+        await uploadToR2(coverKey, coverFile, coverFile.type);
+      }
+
+      // 4. Tell the server the files are ready — it just creates DB rows now
       setStatusMessage('Finalizing chapter...');
 
-      const formData = new FormData();
-      formData.append('series', seriesName);
-      formData.append('chapter', chapterNum);
-      formData.append('title', chapterTitle);
-      formData.append('pagePaths', JSON.stringify(pageUrls));
-      if (isNewSeries && coverFile) formData.append('cover', coverFile);
-
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          series: seriesName,
+          chapter: chapterNum,
+          title: chapterTitle,
+          pageKeys,
+          coverKey,
+        }),
+      });
       const data = await res.json();
 
       if (data.success) {
@@ -88,7 +119,6 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
         setChapterNum('');
         setPdfFile(null);
         setCoverFile(null);
-        // Keep the series selection as-is so you can immediately upload the next chapter
       } else {
         setStatusMessage(`Upload failed: ${data.error || 'Unknown error'}`);
       }

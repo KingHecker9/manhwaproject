@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth0 } from "../../../lib/auth0";
 import { isAuthor } from "../../../lib/auth0-roles";
 import { supabaseAdmin } from "../../../lib/supabase-admin";
+import { r2Client } from "../../../lib/r2-client";
+import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 export async function POST(request) {
   try {
@@ -16,22 +18,18 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not an author" }, { status: 403 });
     }
 
-    // 2. Parse form
-    const formData = await request.formData();
-    const seriesName = formData.get("series");
-    const chapterNum = formData.get("chapter");
-    const chapterTitle = formData.get("title");
-    const pagePathsRaw = formData.get("pagePaths"); // JSON array of Storage paths, already uploaded client-side
-    const coverFile = formData.get("cover"); // optional
+    // 2. Parse JSON body (files already uploaded to R2 client-side)
+    const { series: seriesName, chapter: chapterNum, title: chapterTitle, pageKeys, coverKey } =
+      await request.json();
 
-    if (!seriesName || !chapterNum || !chapterTitle || !pagePathsRaw) {
+    if (!seriesName || !chapterNum || !chapterTitle || !pageKeys?.length) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
 
-    const pagePaths = JSON.parse(pagePathsRaw);
+    const publicUrl = (key) => `${process.env.R2_PUBLIC_URL}/${key}`;
 
     // 3. Find or create series
     const slug = seriesName.toLowerCase().trim().replace(/\s+/g, "-");
@@ -43,26 +41,7 @@ export async function POST(request) {
       .single();
 
     if (!series) {
-      let coverUrl = null;
-
-      if (coverFile) {
-        const coverExt = coverFile.name.split(".").pop();
-        const coverPath = `covers/${slug}.${coverExt}`;
-        const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
-
-        const { error: coverUploadError } = await supabaseAdmin.storage
-          .from("manhwa-pages")
-          .upload(coverPath, coverBuffer, {
-            contentType: coverFile.type,
-            upsert: true,
-          });
-        if (coverUploadError) throw coverUploadError;
-
-        const { data: coverUrlData } = supabaseAdmin.storage
-          .from("manhwa-pages")
-          .getPublicUrl(coverPath);
-        coverUrl = coverUrlData.publicUrl;
-      }
+      const coverUrl = coverKey ? publicUrl(coverKey) : null;
 
       const { data: newSeries, error: seriesError } = await supabaseAdmin
         .from("series")
@@ -85,27 +64,29 @@ export async function POST(request) {
       .single();
     if (chapterError) throw chapterError;
 
-    // 5. Move each already-uploaded page from temp-pages/ to its final path, insert DB rows
+    // 5. Move each page from its temp key to its final key (R2 has no "move" — copy then delete)
     const pageInserts = [];
 
-    for (let i = 0; i < pagePaths.length; i++) {
+    for (let i = 0; i < pageKeys.length; i++) {
       const pageNum = i + 1;
-      const tempPath = pagePaths[i];
-      const finalPath = `${series.id}/${chapter.id}/page-${pageNum}.jpg`;
+      const tempKey = pageKeys[i];
+      const finalKey = `${series.id}/${chapter.id}/page-${pageNum}.jpg`;
 
-      const { error: moveError } = await supabaseAdmin.storage
-        .from("manhwa-pages")
-        .move(tempPath, finalPath);
-      if (moveError) throw moveError;
+      await r2Client.send(new CopyObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        CopySource: `${process.env.R2_BUCKET_NAME}/${tempKey}`,
+        Key: finalKey,
+      }));
 
-      const { data: publicUrlData } = supabaseAdmin.storage
-        .from("manhwa-pages")
-        .getPublicUrl(finalPath);
+      await r2Client.send(new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: tempKey,
+      }));
 
       pageInserts.push({
         chapter_id: chapter.id,
         page_number: pageNum,
-        image_url: publicUrlData.publicUrl,
+        image_url: publicUrl(finalKey),
       });
     }
 
