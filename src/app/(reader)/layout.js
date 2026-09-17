@@ -1,142 +1,139 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useState } from "react";
-import { useUser } from "@auth0/nextjs-auth0/client";
-
-function Avatar({ user }) {
-  if (user.picture) {
-    return (
-      <img
-        src={user.picture}
-        alt={user.name || "Account"}
-        className="w-8 h-8 rounded-full object-cover border border-stone-200"
-      />
-    );
-  }
-  return (
-    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-xs">
-      {(user.name || user.email || "?")[0].toUpperCase()}
-    </div>
-  );
-}
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { BookOpen, Heart, Sparkles, Compass, ShieldCheck } from 'lucide-react';
+import Navbar from '../../components/Navbar';
+import SearchModal from '../../components/SearchModal';
 
 export default function ReaderLayout({ children }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, isLoading } = useUser();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [seriesList, setSeriesList] = useState([]);
+
+  // Pre-load series list for search modal
+  useEffect(() => {
+    // Keyboard shortcut / or Ctrl+K to open search
+    const handleKeyDown = (e) => {
+      if ((e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') ||
+          ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-orange-50">
-      <header className="sticky top-0 z-40 bg-orange-50/95 backdrop-blur-sm border-b border-orange-200">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-serif-display text-xl font-semibold text-stone-900"
-          >
-            Studio Reader
-          </Link>
+    <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200">
+      {/* Sticky Top Navigation Bar */}
+      <Navbar onOpenSearch={() => setSearchOpen(true)} />
 
-          {/* Desktop nav + auth */}
-          <div className="hidden sm:flex items-center gap-6">
-            <nav className="flex gap-6 text-sm font-medium text-stone-500">
-              <Link href="/" className="hover:text-rose-600 transition">
-                Library
-              </Link>
-              <Link href="/about" className="hover:text-rose-600 transition">
-                About
-              </Link>
-              <Link href="/donate" className="hover:text-rose-600 transition">
-                Support Us
-              </Link>
-              <Link href="/contact" className="hover:text-rose-600 transition">
-                Contact
-              </Link>
-            </nav>
+      {/* Global Quick Search Modal */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        seriesList={seriesList}
+      />
 
-            {!isLoading && (
-              <>
-                {user ? (
-                  <Link href="/account">
-                    <Avatar user={user} />
+      {/* Main Page Body */}
+      <div className="flex-1">{children}</div>
+
+      {/* Polished, Modern Footer */}
+      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/50 mt-20 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Brand column */}
+            <div className="md:col-span-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                  <BookOpen className="w-4 h-4" strokeWidth={2} />
+                </div>
+                <span className="font-serif-display text-xl font-bold tracking-tight text-[var(--text-main)]">
+                  Studio Reader
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] max-w-sm leading-relaxed">
+                A premium, reader-focused manhwa platform. Read official chapters with continuous vertical scrolling, responsive layouts, and zero distractions.
+              </p>
+              <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pt-1">
+                <span>Built for creators and avid readers</span>
+              </div>
+            </div>
+
+            {/* Navigation links */}
+            <div>
+              <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-main)] font-semibold mb-3">
+                Platform
+              </p>
+              <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
+                <li>
+                  <Link href="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Home & Featured
                   </Link>
-                ) : (
-                  <a
-                    href="/auth/login?returnTo=/"
-                    className="text-xs px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold transition"
-                  >
-                    Log In / Sign Up
-                  </a>
-                )}
-              </>
-            )}
+                </li>
+                <li>
+                  <Link href="/#schedule" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Weekly Schedule
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/#latest" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Latest Chapters
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/#catalog" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    All Series & Genres
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/author" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium text-indigo-500">
+                    Author Portal
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Information links */}
+            <div>
+              <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-main)] font-semibold mb-3">
+                Information
+              </p>
+              <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
+                <li>
+                  <Link href="/about" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    About Studio Reader
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/donate" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Support Creators
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Contact & Submissions
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/account" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    Reader Account
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            className="sm:hidden p-2 rounded bg-white border border-stone-200 text-stone-600"
-          >
-            ☰
-          </button>
+          {/* Bottom copyright */}
+          <div className="border-t border-[var(--border-subtle)] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[var(--text-muted)] gap-4">
+            <p>© {new Date().getFullYear()} Studio Reader. All rights reserved.</p>
+            <p className="flex items-center gap-1.5">
+              <span>Crafted for high definition reading</span>
+            </p>
+          </div>
         </div>
-
-        {/* Mobile dropdown */}
-        {mobileOpen && (
-          <div className="sm:hidden border-t border-orange-200 px-6 py-4 space-y-3 bg-orange-50">
-            <Link
-              href="/"
-              onClick={() => setMobileOpen(false)}
-              className="block text-sm text-stone-700"
-            >
-              Library
-            </Link>
-            <Link
-              href="/about"
-              onClick={() => setMobileOpen(false)}
-              className="block text-sm text-stone-700"
-            >
-              About
-            </Link>
-            <Link
-              href="/donate"
-              onClick={() => setMobileOpen(false)}
-              className="block text-sm text-stone-700"
-            >
-              Support Us
-            </Link>
-            <Link
-              href="/contact"
-              onClick={() => setMobileOpen(false)}
-              className="block text-sm text-stone-700"
-            >
-              Contact
-            </Link>
-            {!isLoading && (
-              <>
-                {user ? (
-                  <Link
-                    href="/account"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 text-sm text-stone-700"
-                  >
-                    <Avatar user={user} />
-                    My Account
-                  </Link>
-                ) : (
-                  <a
-                    href="/auth/login?returnTo=/"
-                    className="block text-sm text-rose-600 font-semibold"
-                  >
-                    Log In / Sign Up
-                  </a>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </header>
-
-      {children}
+      </footer>
     </div>
   );
 }
