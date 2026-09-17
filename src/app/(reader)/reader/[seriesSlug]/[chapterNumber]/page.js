@@ -3,7 +3,7 @@ import { auth0 } from "../../../../../lib/auth0";
 import { notFound } from "next/navigation";
 import WebtoonsReader from "../WebtoonsReader";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function ReaderPage({ params }) {
   const { seriesSlug, chapterNumber } = await params;

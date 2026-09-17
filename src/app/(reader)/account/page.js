@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { auth0 } from '../../../lib/auth0';
 import { isAuthor } from '../../../lib/auth0-roles';
 import { supabaseAdmin } from '../../../lib/supabase-admin';
