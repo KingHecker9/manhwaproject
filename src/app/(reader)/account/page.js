@@ -1,5 +1,6 @@
 import { auth0 } from '../../../lib/auth0';
 import { isAuthor } from '../../../lib/auth0-roles';
+import { supabaseAdmin } from '../../../lib/supabase-admin';
 import Link from 'next/link';
 import { BookOpen, Library, FileText, Eye, Camera } from 'lucide-react';
 
@@ -39,10 +40,18 @@ export default async function AccountPage() {
 
   const authorized = await isAuthor(session.user.sub);
 
-  // TODO: replace with real counts once reading_history / views tracking exists
+  // Real reader stats, pulled from reading_history
+  const { data: readingRows } = await supabaseAdmin
+    .from("reading_history")
+    .select("chapter_id, series_id")
+    .eq("user_id", session.user.sub);
+
+  const chaptersReadCount = readingRows?.length ?? 0;
+  const seriesFollowedCount = new Set(readingRows?.map((r) => r.series_id)).size;
+
   const readerStats = [
-    { icon: BookOpen, value: 12, label: "Chapters Read" },
-    { icon: Library, value: 3, label: "Series Followed" },
+    { icon: BookOpen, value: chaptersReadCount, label: "Chapters Read" },
+    { icon: Library, value: seriesFollowedCount, label: "Series Followed" },
   ];
 
   // TODO: replace with real Supabase counts + a real reads/views aggregate

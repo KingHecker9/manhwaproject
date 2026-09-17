@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../../../../lib/supabase-admin";
+import { auth0 } from "../../../../../lib/auth0";
 import { notFound } from "next/navigation";
 import Image from 'next/image';
 
@@ -23,6 +24,22 @@ export default async function ReaderPage({ params }) {
     .single();
 
   if (!chapter) return notFound();
+
+  // 2.5. Log this read for signed-in users (upsert avoids duplicate rows on re-reads)
+  const session = await auth0.getSession();
+  if (session) {
+    await supabaseAdmin
+      .from("reading_history")
+      .upsert(
+        {
+          user_id: session.user.sub,
+          chapter_id: chapter.id,
+          series_id: series.id,
+          read_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,chapter_id" }
+      );
+  }
 
   // 3. Get all pages for this chapter, in order
   const { data: pages } = await supabaseAdmin
