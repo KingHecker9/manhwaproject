@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -17,11 +16,14 @@ import {
   Bookmark,
   BookOpen,
   ArrowUp,
-  Sparkles,
   CheckCircle2,
   Share2,
   Check,
+  X,
+  Clock,
+  Coffee,
 } from 'lucide-react';
+import SupportCreatorModal from '@/components/SupportCreatorModal';
 
 export default function WebtoonsReader({
   series,
@@ -39,6 +41,7 @@ export default function WebtoonsReader({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [readerBmcOpen, setReaderBmcOpen] = useState(false);
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef(null);
@@ -102,38 +105,43 @@ export default function WebtoonsReader({
     }
 
     lastScrollY.current = currentScrollY;
+
+    // Inactivity timeout: hide controls after 4 seconds of no movement if scrolled down
+    clearTimeout(scrollTimeout.current);
+    if (currentScrollY > 100) {
+      scrollTimeout.current = setTimeout(() => {
+        setControlsVisible(false);
+      }, 4000);
+    }
   }, []);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout.current);
     };
-    document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
-  }, []);
+  }, [handleScroll]);
 
   // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (drawerOpen) {
+        if (e.key === 'Escape') setDrawerOpen(false);
+        return;
+      }
 
       if (e.key === 'ArrowLeft' && prevChapter) {
         router.push(`/reader/${series.slug}/${prevChapter.chapter_number}`);
       } else if (e.key === 'ArrowRight' && nextChapter) {
         router.push(`/reader/${series.slug}/${nextChapter.chapter_number}`);
+      } else if (e.key === 'm' || e.key === 'M') {
+        setControlsVisible((prev) => !prev);
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
-      } else if (e.key === 'Escape') {
-        if (drawerOpen) setDrawerOpen(false);
-        else setControlsVisible((v) => !v);
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevChapter, nextChapter, series.slug, router, drawerOpen]);
@@ -141,8 +149,12 @@ export default function WebtoonsReader({
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
     } else {
-      document.exitFullscreen().catch(() => {});
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+        setIsFullscreen(false);
+      }
     }
   };
 
@@ -163,6 +175,14 @@ export default function WebtoonsReader({
     } catch (e) {}
   };
 
+  const handleShare = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -171,11 +191,11 @@ export default function WebtoonsReader({
     <div className="relative min-h-screen bg-neutral-950 text-neutral-100 select-none">
       {/* Top Floating Header Overlay (Auto-Hides on Scroll Down) */}
       <header
-        className={`fixed top-0 inset-x-0 z-50 bg-neutral-950/90 backdrop-blur-md border-b border-neutral-800/80 px-4 sm:px-6 py-3 flex items-center justify-between transition-transform duration-300 ease-out shadow-lg ${
+        className={`fixed top-0 inset-x-0 z-50 bg-neutral-950/95 backdrop-blur-xl border-b border-neutral-800/80 px-4 sm:px-6 py-3 flex items-center justify-between transition-transform duration-300 ease-out shadow-lg pt-[max(0.75rem,env(safe-area-inset-top))] ${
           controlsVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Link
             href={`/series/${series.slug}`}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-neutral-300 hover:text-white transition-colors shrink-0"
@@ -186,7 +206,7 @@ export default function WebtoonsReader({
           </Link>
 
           <div className="min-w-0">
-            <h1 className="text-xs sm:text-sm font-semibold text-white truncate">
+            <h1 className="text-xs sm:text-sm font-semibold text-white truncate max-w-[130px] sm:max-w-xs">
               {series.title}
             </h1>
             <p className="text-[11px] text-indigo-400 font-medium truncate">
@@ -235,78 +255,137 @@ export default function WebtoonsReader({
           }}
           className="flex flex-col items-center mx-auto transition-all duration-200"
         >
-          {pages.map((page, idx) => (
+          {pages.length === 0 ? (
             <div
-              key={page.page_number}
-              className="w-full relative m-0 p-0 block border-0 leading-none"
-              style={{ lineHeight: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto space-y-4"
             >
-              <img
-                src={page.image_url}
-                alt={`Page ${page.page_number}`}
-                loading={idx < 3 ? 'eager' : 'lazy'}
-                decoding="async"
-                className="w-full h-auto block m-0 p-0 border-0 align-bottom"
-                style={{ display: 'block', verticalAlign: 'bottom' }}
-              />
+              <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+                <BookOpen className="w-7 h-7" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  Chapter {chapter.chapter_number}
+                </h2>
+                <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
+                  Pages for this chapter are currently being finalized. Please check back shortly or select another chapter from the menu.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {prevChapter && (
+                  <Link
+                    href={`/reader/${series.slug}/${prevChapter.chapter_number}`}
+                    className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-white transition-colors"
+                  >
+                    Read Chapter {prevChapter.chapter_number}
+                  </Link>
+                )}
+                <Link
+                  href={`/series/${series.slug}`}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition-colors"
+                >
+                  Return to Overview
+                </Link>
+              </div>
             </div>
-          ))}
+          ) : (
+            pages.map((page, idx) => (
+              <div
+                key={page.page_number}
+                className="w-full relative m-0 p-0 block border-0 leading-none"
+                style={{ lineHeight: 0 }}
+              >
+                <img
+                  src={page.image_url}
+                  alt={`Page ${page.page_number}`}
+                  loading={idx < 3 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  className="w-full h-auto block m-0 p-0 border-0 align-bottom"
+                  style={{ display: 'block', verticalAlign: 'bottom' }}
+                />
+              </div>
+            ))
+          )}
 
           {/* End of Chapter Action Section */}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full px-6 py-16 text-center bg-neutral-900/90 border-t border-neutral-800 rounded-b-3xl my-8 cursor-default space-y-6"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/30">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
+          {pages.length > 0 && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-6 py-14 text-center bg-neutral-900/90 border-t border-neutral-800 rounded-b-3xl my-8 cursor-default space-y-6"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/30">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
 
-            <div>
-              <h2 className="text-lg font-bold text-white">
-                You&apos;ve completed Chapter {chapter.chapter_number}!
-              </h2>
-              <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
-                {nextChapter
-                  ? `Continue to the next chapter: "${nextChapter.title || `Chapter ${nextChapter.chapter_number}`}"`
-                  : 'You have caught up to the latest chapter of this series!'}
-              </p>
-            </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white">
+                  You&apos;ve completed Chapter {chapter.chapter_number}!
+                </h2>
+                <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
+                  {nextChapter
+                    ? `Next up: "${nextChapter.title || `Chapter ${nextChapter.chapter_number}`}"`
+                    : 'You have caught up to the latest chapter of this series!'}
+                </p>
+              </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              {nextChapter ? (
-                <Link
-                  href={`/reader/${series.slug}/${nextChapter.chapter_number}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-102"
+              {/* Buy Me a Coffee Creator Support Card */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-amber-400/10 border border-amber-500/25 max-w-md mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-lg shadow-amber-500/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-400 text-neutral-950 flex items-center justify-center font-bold shrink-0 shadow-md">
+                    <Coffee className="w-5 h-5 fill-neutral-950" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-white">Enjoyed this chapter?</h4>
+                    <p className="text-[11px] text-neutral-400">Support {series.author || 'the creator'} with a coffee!</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setReaderBmcOpen(true)}
+                  type="button"
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
                 >
-                  <span>Next: Chapter {nextChapter.chapter_number}</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <Coffee className="w-3.5 h-3.5 fill-neutral-950" />
+                  <span>Tip Coffee</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {nextChapter ? (
+                  <Link
+                    href={`/reader/${series.slug}/${nextChapter.chapter_number}`}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-102"
+                  >
+                    <span>Next: Chapter {nextChapter.chapter_number}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                ) : null}
+
+                <Link
+                  href={`/series/${series.slug}`}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Series Overview</span>
                 </Link>
-              ) : null}
 
-              <Link
-                href={`/series/${series.slug}`}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-sm font-semibold transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Return to Overview</span>
-              </Link>
-
-              <button
-                onClick={scrollToTop}
-                type="button"
-                className="p-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors"
-                title="Back to Top"
-              >
-                <ArrowUp className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={scrollToTop}
+                  type="button"
+                  className="p-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors"
+                  title="Back to Top"
+                >
+                  <ArrowUp className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 
       {/* Bottom Floating Navigation Bar (Auto-Hides on Scroll Down) */}
       <footer
-        className={`fixed bottom-0 inset-x-0 z-50 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800/80 px-4 sm:px-6 py-3 transition-transform duration-300 ease-out shadow-2xl ${
+        className={`fixed bottom-0 inset-x-0 z-50 bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-800/80 px-3 sm:px-6 py-2.5 sm:py-3 transition-transform duration-300 ease-out shadow-2xl pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
           controlsVisible ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -328,20 +407,30 @@ export default function WebtoonsReader({
             </span>
           )}
 
+          {/* Quick Drawer Button on Mobile */}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[11px] font-semibold text-neutral-300"
+          >
+            <List className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Ch. {chapter.chapter_number}</span>
+          </button>
+
           {/* Reading Progress Indicator */}
           <div className="flex items-center gap-2">
-            <div className="w-20 sm:w-32 bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+            <div className="w-16 sm:w-32 bg-neutral-800 h-1.5 rounded-full overflow-hidden">
               <div
                 className="bg-indigo-500 h-full rounded-full transition-all duration-150"
                 style={{ width: `${readProgress}%` }}
               />
             </div>
-            <span className="text-[11px] font-mono text-neutral-400 font-semibold w-8">
+            <span className="text-[10px] sm:text-[11px] font-mono text-neutral-400 font-semibold w-7 sm:w-8">
               {readProgress}%
             </span>
           </div>
 
-          {/* Middle Controls: Zoom & Fullscreen */}
+          {/* Middle Controls: Zoom & Fullscreen (Desktop) */}
           <div className="hidden md:flex items-center gap-1 bg-neutral-900/80 border border-neutral-800 rounded-xl p-1">
             <button
               onClick={() => setZoomLevel((z) => Math.max(z - 10, 70))}
@@ -408,24 +497,30 @@ export default function WebtoonsReader({
           {/* Backdrop */}
           <div
             onClick={() => setDrawerOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
           />
 
-          {/* Drawer Content */}
-          <div className="relative w-full max-w-sm bg-neutral-900 border-l border-neutral-800 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-right duration-200">
+          {/* Drawer Container */}
+          <div className="relative w-full max-w-xs sm:max-w-sm bg-neutral-950 border-l border-neutral-800 h-full flex flex-col shadow-2xl z-10">
             <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-white">{series.title}</h3>
-                <p className="text-xs text-neutral-400">Chapters list</p>
+                <p className="text-xs font-mono uppercase tracking-widest text-indigo-400 font-semibold">
+                  Chapter Directory
+                </p>
+                <h3 className="text-sm font-bold text-white truncate max-w-[200px]">
+                  {series.title}
+                </h3>
               </div>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-white bg-neutral-800"
+                type="button"
+                className="p-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
+            {/* Scrollable Chapter List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
               {allChapters.map((ch) => {
                 const isCurrent = Number(ch.chapter_number) === Number(chapter.chapter_number);
@@ -434,18 +529,20 @@ export default function WebtoonsReader({
                     key={ch.id}
                     href={`/reader/${series.slug}/${ch.chapter_number}`}
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+                    className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-medium transition-colors ${
                       isCurrent
-                        ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                        : 'text-neutral-300 hover:bg-neutral-800 hover:text-white'
+                        ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
+                        : 'bg-neutral-900/60 hover:bg-neutral-800 text-neutral-300 hover:text-white'
                     }`}
                   >
-                    <div className="truncate">
-                      <span>Chapter {ch.chapter_number}</span>
-                      {ch.title && <span className="text-neutral-400 ml-1.5">— {ch.title}</span>}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate">
+                        Chapter {ch.chapter_number}
+                        {ch.title ? ` — ${ch.title}` : ''}
+                      </p>
                     </div>
                     {isCurrent && (
-                      <span className="text-[10px] uppercase font-bold bg-white/20 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-semibold shrink-0 ml-2">
                         Reading
                       </span>
                     )}
@@ -456,6 +553,14 @@ export default function WebtoonsReader({
           </div>
         </div>
       )}
+
+      {/* Support Creator Modal */}
+      <SupportCreatorModal
+        isOpen={readerBmcOpen}
+        onClose={() => setReaderBmcOpen(false)}
+        seriesTitle={series.title}
+        creatorName={series.author}
+      />
     </div>
   );
 }

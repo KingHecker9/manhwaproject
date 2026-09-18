@@ -52,37 +52,40 @@ export default function ContinueReading({ seriesList = [], initialHistory = [] }
           <Link
             key={item.id}
             href={`/reader/${item.slug}/${item.lastChapter}`}
-            className="flex items-center gap-3.5 p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/50 shadow-xs hover:shadow-md transition-all group"
+            className="flex items-center gap-3.5 p-3.5 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/40 shadow-xs hover-lift transition-all group"
           >
-            <div className="relative w-14 h-20 rounded-xl overflow-hidden bg-[var(--bg-surface)] shrink-0 border border-[var(--border-subtle)]">
+            <div className="relative w-16 h-22 rounded-2xl overflow-hidden bg-[var(--bg-surface)] shrink-0 border border-[var(--border-subtle)]">
               {item.cover ? (
                 <Image
                   src={item.cover}
                   alt={item.title}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-200"
+                  className="object-cover group-hover:scale-108 transition-transform duration-300 ease-out"
                 />
               ) : null}
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-[var(--text-main)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+              <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-1">
+                Resume Ch. {item.lastChapter}
+              </span>
+              <h3 className="text-sm font-bold text-[var(--text-main)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                 {item.title}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                Chapter {item.lastChapter} of {item.chapterCount}
+              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                Ch. {item.lastChapter} of {item.chapterCount} • {item.progress}% read
               </p>
 
               {/* Progress bar */}
-              <div className="w-full bg-[var(--bg-surface)] h-1.5 rounded-full overflow-hidden mt-2">
+              <div className="w-full bg-[var(--bg-surface)] h-1.5 rounded-full overflow-hidden mt-2 border border-[var(--border-subtle)]">
                 <div
-                  className="bg-indigo-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${Math.max(10, item.progress)}%` }}
+                  className="bg-gradient-to-r from-indigo-600 to-indigo-400 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.max(8, item.progress)}%` }}
                 />
               </div>
             </div>
 
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-105 transition-all shrink-0 shadow-xs">
               <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
           </Link>

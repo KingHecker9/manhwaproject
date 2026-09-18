@@ -20,9 +20,11 @@ import {
   ShieldCheck,
   User,
   Flame,
-  ArrowRight
+  ArrowRight,
+  Coffee,
 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
+import SupportCreatorModal from '@/components/SupportCreatorModal';
 
 export default function AccountClient({ user, authorized, readingRows = [] }) {
   const { theme, setTheme } = useTheme();
@@ -30,6 +32,7 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
   const [bookmarkedSeries, setBookmarkedSeries] = useState([]);
   const [historyList, setHistoryList] = useState(readingRows);
   const [historyCleared, setHistoryCleared] = useState(false);
+  const [bmcModalOpen, setBmcModalOpen] = useState(false);
 
   // Load client bookmarks from localStorage
   useEffect(() => {
@@ -112,6 +115,14 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
                   <span>Open Creator Studio</span>
                 </Link>
               )}
+              <button
+                onClick={() => setBmcModalOpen(true)}
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-bold shadow-xs hover:shadow-amber-400/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <Coffee className="w-3.5 h-3.5 fill-neutral-950" />
+                <span>☕ Buy Me a Coffee</span>
+              </button>
               <a
                 href="/auth/logout"
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] hover:border-rose-500/40 text-xs font-medium text-[var(--text-secondary)] hover:text-rose-500 transition-colors"
@@ -396,6 +407,13 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
           </div>
         </div>
       )}
+
+      {/* Buy Me a Coffee Creator Support Modal */}
+      <SupportCreatorModal
+        isOpen={bmcModalOpen}
+        onClose={() => setBmcModalOpen(false)}
+        creatorName="Platform Creators & Authors"
+      />
     </main>
   );
 }

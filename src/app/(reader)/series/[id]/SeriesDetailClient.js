@@ -19,7 +19,9 @@ import {
   Eye,
   Play,
   CheckCircle2,
+  Coffee,
 } from 'lucide-react';
+import SupportCreatorModal from '@/components/SupportCreatorModal';
 
 export default function SeriesDetailClient({ series, chapters = [], lastReadChapter = null }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -28,6 +30,7 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
   const [chapterSearch, setChapterSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' = 1 to N, 'desc' = N to 1
   const [readChapters, setReadChapters] = useState({});
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
 
   // Sync bookmark state from localStorage
   useEffect(() => {
@@ -93,13 +96,15 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
   }, [chapters, chapterSearch, sortOrder]);
 
   // Determine starting chapter target (first chapter or continue reading)
-  const firstChapter = chapters.length > 0
-    ? [...chapters].sort((a, b) => Number(a.chapter_number) - Number(b.chapter_number))[0]
-    : null;
+  const sortedAsc = useMemo(() => {
+    return [...chapters].sort((a, b) => Number(a.chapter_number) - Number(b.chapter_number));
+  }, [chapters]);
+
+  const firstChapter = sortedAsc[0] || null;
   const continueTarget = lastReadChapter || (firstChapter ? firstChapter.chapter_number : 1);
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen pb-28 sm:pb-24">
       {/* Breadcrumb Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <nav className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
@@ -111,7 +116,7 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
             Series
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-[var(--text-main)] font-medium truncate max-w-xs">
+          <span className="text-[var(--text-main)] font-medium truncate max-w-[160px] sm:max-w-xs">
             {series.title}
           </span>
         </nav>
@@ -134,18 +139,18 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
         </div>
 
         {/* Header Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center sm:items-start">
             {/* Left: Cover Art Card */}
             <div className="md:col-span-4 lg:col-span-3 flex flex-col items-center sm:items-start">
-              <div className="relative w-52 sm:w-60 lg:w-64 aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-2 border-white/10 bg-neutral-900">
+              <div className="relative w-44 sm:w-60 lg:w-64 aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-2 border-white/10 bg-neutral-900">
                 {series.cover ? (
                   <Image
                     src={series.cover}
                     alt={series.title}
                     fill
                     priority
-                    sizes="280px"
+                    sizes="(max-width: 640px) 180px, 280px"
                     className="object-cover"
                   />
                 ) : (
@@ -163,56 +168,58 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
             </div>
 
             {/* Right: Series Details & Metadata */}
-            <div className="md:col-span-8 lg:col-span-9 space-y-5">
+            <div className="md:col-span-8 lg:col-span-9 space-y-4 text-center sm:text-left">
               {/* Title & Alternative Title */}
               <div>
-                <h1 className="font-serif-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+                <h1 className="font-serif-display text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
                   {series.title}
                 </h1>
                 {series.alternativeTitle && (
-                  <p className="text-sm sm:text-base text-neutral-300 font-medium mt-1.5">
+                  <p className="text-xs sm:text-base text-neutral-300 font-medium mt-1">
                     {series.alternativeTitle}
                   </p>
                 )}
               </div>
 
               {/* Creator & Release Day Row */}
-              <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-neutral-300">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs sm:text-sm text-neutral-300">
                 <span className="flex items-center gap-1.5">
                   <User className="w-4 h-4 text-indigo-400" />
                   <span>Author: <strong className="text-white">{series.author}</strong></span>
                 </span>
-                <span className="text-neutral-600">•</span>
+                <span className="text-neutral-600 hidden sm:inline">•</span>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-indigo-400" />
-                  <span>Schedule: Releases every <strong className="text-white">{series.releaseDay}</strong></span>
+                  <span>Schedule: <strong className="text-white">{series.releaseDay}</strong></span>
                 </span>
               </div>
 
-              {/* Stats Bar */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              {/* Real Stats Bar */}
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-1">
                 {series.rating && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-amber-300 text-xs font-semibold">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     <span>{series.rating} / 5.0</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-white text-xs font-medium">
-                  <BookOpen className="w-4 h-4 text-indigo-400" />
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
                   <span>{chapters.length} Chapters</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-white text-xs font-medium">
-                  <Eye className="w-4 h-4 text-indigo-400" />
-                  <span>{series.viewsCount || '500K+'} Reads</span>
-                </div>
+                {series.viewsCount && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-white text-xs font-medium">
+                    <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>{series.viewsCount} Reads</span>
+                  </div>
+                )}
               </div>
 
               {/* Genres Tags */}
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
                 {(series.genres || []).map((genre) => (
                   <span
                     key={genre}
-                    className="px-3 py-1 rounded-xl text-xs font-medium bg-white/10 backdrop-blur-md text-neutral-200 border border-white/10 hover:border-indigo-400 transition-colors"
+                    className="px-3 py-1 rounded-xl text-xs font-medium bg-white/10 backdrop-blur-md text-neutral-200 border border-white/10"
                   >
                     {genre}
                   </span>
@@ -220,15 +227,15 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
               </div>
 
               {/* Synopsis / Description */}
-              <div className="space-y-1 pt-1 max-w-3xl">
+              <div className="space-y-1 pt-1 max-w-3xl text-left">
                 <p
-                  className={`text-sm text-neutral-300 leading-relaxed ${
+                  className={`text-xs sm:text-sm text-neutral-300 leading-relaxed ${
                     !showFullSynopsis && 'line-clamp-3'
                   }`}
                 >
                   {series.synopsis}
                 </p>
-                {series.synopsis?.length > 200 && (
+                {series.synopsis?.length > 180 && (
                   <button
                     onClick={() => setShowFullSynopsis((v) => !v)}
                     className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -238,8 +245,8 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
                 )}
               </div>
 
-              {/* Primary Call to Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-3">
+              {/* Desktop Call to Action Buttons */}
+              <div className="hidden sm:flex flex-wrap items-center gap-3 pt-3">
                 {firstChapter ? (
                   <Link
                     href={`/reader/${series.slug}/${continueTarget}`}
@@ -258,6 +265,16 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
                     No chapters yet
                   </button>
                 )}
+
+                {/* Tip Creator (Buy Me a Coffee) */}
+                <button
+                  onClick={() => setSupportModalOpen(true)}
+                  type="button"
+                  className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-sm font-bold shadow-lg shadow-amber-400/25 hover:scale-102 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Coffee className="w-4 h-4 fill-neutral-950" />
+                  <span>Tip Creator</span>
+                </button>
 
                 {/* Bookmark Toggle */}
                 <button
@@ -288,7 +305,7 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
                   ) : (
                     <>
                       <Share2 className="w-4 h-4" />
-                      <span className="text-xs hidden sm:inline">Share</span>
+                      <span className="text-xs">Share</span>
                     </>
                   )}
                 </button>
@@ -299,12 +316,12 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
       </div>
 
       {/* Chapter List Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-5 sm:p-8 shadow-xs">
           {/* Chapter Controls Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--border-subtle)]">
             <div>
-              <h2 className="font-serif-display text-2xl font-bold text-[var(--text-main)]">
+              <h2 className="font-serif-display text-xl sm:text-2xl font-bold text-[var(--text-main)]">
                 Chapters ({chapters.length})
               </h2>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -312,16 +329,16 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               {/* Chapter Search Filter */}
-              <div className="relative w-full sm:w-64">
+              <div className="relative flex-1 sm:w-64">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                 <input
                   type="text"
                   value={chapterSearch}
                   onChange={(e) => setChapterSearch(e.target.value)}
                   placeholder="Search chapter..."
-                  className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl pl-10 pr-4 py-2 text-xs text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl pl-10 pr-3 py-2 text-xs text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-indigo-500 transition-colors"
                 />
               </div>
 
@@ -329,86 +346,132 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
               <button
                 onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
                 type="button"
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-indigo-500 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-indigo-500 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors shrink-0"
               >
                 <ArrowDownUp className="w-3.5 h-3.5 text-indigo-500" />
-                <span>{sortOrder === 'asc' ? 'Oldest First' : 'Newest First'}</span>
+                <span className="hidden sm:inline">{sortOrder === 'asc' ? 'Oldest First' : 'Newest First'}</span>
+                <span className="sm:hidden">{sortOrder === 'asc' ? '1-N' : 'N-1'}</span>
               </button>
             </div>
           </div>
 
           {/* Chapters Grid / List */}
-          <div className="mt-6">
-            {filteredChapters.length === 0 ? (
-              <div className="py-16 text-center text-[var(--text-muted)]">
-                <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30 text-indigo-400" />
-                <p className="text-sm font-semibold text-[var(--text-main)]">
-                  {chapterSearch ? 'No chapters match your search' : 'No chapters uploaded yet'}
-                </p>
-                <p className="text-xs mt-1">Check back soon for new releases</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {filteredChapters.map((chapter) => {
-                  const isRead = !!readChapters[chapter.chapter_number];
-                  return (
-                    <Link
-                      key={chapter.id}
-                      href={`/reader/${series.slug}/${chapter.chapter_number}`}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-150 group ${
-                        isRead
-                          ? 'bg-[var(--bg-surface)]/50 border-[var(--border-subtle)]/70 text-[var(--text-muted)] hover:border-indigo-500/50'
-                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-indigo-500 text-[var(--text-main)] hover:shadow-xs'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                            isRead
-                              ? 'bg-[var(--bg-card)] text-[var(--text-muted)]'
-                              : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white'
-                          }`}
-                        >
-                          {chapter.chapter_number}
-                        </div>
+          {filteredChapters.length === 0 ? (
+            <div className="py-16 text-center">
+              <BookOpen className="w-12 h-12 mx-auto text-[var(--text-muted)] opacity-40 mb-3" />
+              <h3 className="text-base font-semibold text-[var(--text-main)]">No chapters found</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                {chapterSearch ? `No chapters matching "${chapterSearch}"` : 'No chapters uploaded yet.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-6">
+              {filteredChapters.map((ch) => {
+                const isRead = !!readChapters[ch.chapter_number];
+                return (
+                  <Link
+                    key={ch.id}
+                    href={`/reader/${series.slug}/${ch.chapter_number}`}
+                    className={`flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 group ${
+                      isRead
+                        ? 'bg-[var(--bg-surface)]/60 border-[var(--border-subtle)] opacity-85'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-indigo-500 hover:shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+                          isRead
+                            ? 'bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+                            : 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white'
+                        }`}
+                      >
+                        {ch.chapter_number}
+                      </div>
 
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                            Chapter {chapter.chapter_number}
-                            {chapter.title ? ` — ${chapter.title}` : ''}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs sm:text-sm font-semibold text-[var(--text-main)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                            Chapter {ch.chapter_number}
                           </p>
-                          <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5">
-                            <Clock className="w-3 h-3" />
-                            <span>
-                              {chapter.created_at
-                                ? new Date(chapter.created_at).toLocaleDateString(undefined, {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  })
-                                : 'Available'}
-                            </span>
-                            {isRead && (
-                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium ml-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Read
-                              </span>
-                            )}
-                          </div>
+                          {isRead && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          )}
                         </div>
+                        {ch.title && (
+                          <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
+                            {ch.title}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 mt-1">
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            {ch.created_at
+                              ? new Date(ch.created_at).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
+                              : 'Recent'}
+                          </span>
+                        </p>
                       </div>
+                    </div>
 
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-muted)] group-hover:text-indigo-600 group-hover:translate-x-1 transition-all">
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-indigo-600 group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Mobile Sticky Floating CTA Bar for One-Handed Reading */}
+      {firstChapter && (
+        <div className="sm:hidden fixed bottom-14 inset-x-0 z-30 p-3 bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)]/95 to-transparent pointer-events-none flex justify-center pb-safe">
+          <div className="pointer-events-auto flex items-center gap-2 w-full max-w-sm">
+            <Link
+              href={`/reader/${series.slug}/${continueTarget}`}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-indigo-600 active:bg-indigo-700 text-white font-bold text-xs shadow-xl shadow-indigo-600/35 transition-all"
+            >
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+              <span>
+                {lastReadChapter ? `Resume Ch. ${lastReadChapter}` : `Start Ch. ${firstChapter.chapter_number}`}
+              </span>
+            </Link>
+
+            <button
+              onClick={toggleBookmark}
+              type="button"
+              className={`p-3.5 rounded-2xl border backdrop-blur-md transition-colors ${
+                isBookmarked
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)]'
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+            </button>
+
+            <button
+              onClick={() => setSupportModalOpen(true)}
+              type="button"
+              aria-label="Tip Creator"
+              className="p-3.5 rounded-2xl bg-amber-400 text-neutral-950 shadow-lg shadow-amber-400/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <Coffee className="w-4 h-4 fill-neutral-950" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Support Creator Modal */}
+      <SupportCreatorModal
+        isOpen={supportModalOpen}
+        onClose={() => setSupportModalOpen(false)}
+        seriesTitle={series.title}
+        creatorName={series.author}
+      />
     </main>
   );
 }

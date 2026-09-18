@@ -23,8 +23,10 @@ import {
   Layers,
   Heart,
   CheckCircle2,
+  Coffee,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import SupportCreatorModal from './SupportCreatorModal';
 
 function Avatar({ user }) {
   if (user?.picture) {
@@ -51,6 +53,7 @@ export default function Navbar({ onOpenSearch }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [bmcModalOpen, setBmcModalOpen] = useState(false);
   const profileRef = useRef(null);
   const notifRef = useRef(null);
 
@@ -162,6 +165,18 @@ export default function Navbar({ onOpenSearch }) {
             <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded text-[var(--text-muted)]">
               /
             </kbd>
+          </button>
+
+          {/* Support Creators / Buy Me a Coffee */}
+          <button
+            onClick={() => setBmcModalOpen(true)}
+            type="button"
+            aria-label="Support Creators"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-xs hover:shadow-amber-400/25 active:scale-95 transition-all cursor-pointer"
+            title="Support creators with Buy Me a Coffee"
+          >
+            <Coffee className="w-3.5 h-3.5 fill-neutral-950" />
+            <span className="hidden sm:inline">Support</span>
           </button>
 
           {/* Theme switcher */}
@@ -356,13 +371,24 @@ export default function Navbar({ onOpenSearch }) {
               <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-muted)] font-semibold px-3 mb-2">
                 Community & Info
               </p>
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  setBmcModalOpen(true);
+                }}
+                type="button"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 transition-all cursor-pointer"
+              >
+                <Coffee className="w-4 h-4 fill-neutral-950" />
+                <span>☕ Buy Me a Coffee</span>
+              </button>
               <Link
                 href="/donate"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
               >
                 <Heart className="w-4 h-4 text-rose-500" strokeWidth={2} />
-                <span>Support Us</span>
+                <span>Support Perks & Membership</span>
               </Link>
               <Link
                 href="/contact"
@@ -421,6 +447,13 @@ export default function Navbar({ onOpenSearch }) {
           </div>
         </div>
       )}
+
+      {/* Global Support Creator Modal */}
+      <SupportCreatorModal
+        isOpen={bmcModalOpen}
+        onClose={() => setBmcModalOpen(false)}
+        creatorName="Platform Creators"
+      />
     </header>
   );
 }

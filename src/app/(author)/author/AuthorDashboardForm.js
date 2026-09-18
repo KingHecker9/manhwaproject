@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -14,17 +14,26 @@ import {
   Layers,
   X,
   Loader2,
-  BookOpen
+  BookOpen,
+  Trash2,
+  Eye,
+  Calendar,
+  BarChart3,
+  ExternalLink,
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 
 export default function AuthorDashboardForm({ existingSeries = [] }) {
+  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'manage' | 'analytics'
+  const [seriesList, setSeriesList] = useState(existingSeries);
   const [selectedSeriesSlug, setSelectedSeriesSlug] = useState(
     existingSeries.length > 0 ? existingSeries[0].slug : '__new__'
   );
   const [newSeriesName, setNewSeriesName] = useState('');
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterNum, setChapterNum] = useState('');
-  
+
   // Upload mode: 'pdf' or 'images'
   const [uploadMode, setUploadMode] = useState('pdf');
   const [pdfFile, setPdfFile] = useState(null);
@@ -35,14 +44,40 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
   // Status & progress
   const [uploading, setUploading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [uploadProgress, setUploadProgress] = useState(0); // 0 to 100
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errorAlert, setErrorAlert] = useState('');
   const [publishedData, setPublishedData] = useState(null);
+
+  // Chapter management state
+  const [selectedManageSeries, setSelectedManageSeries] = useState(
+    existingSeries.length > 0 ? existingSeries[0].id : null
+  );
+  const [deletingChapterId, setDeletingChapterId] = useState(null);
 
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
 
   const isNewSeries = selectedSeriesSlug === '__new__';
+
+  // Fetch full author series data (with chapters & view counts)
+  const refreshAuthorData = async () => {
+    try {
+      const res = await fetch('/api/author/series');
+      const data = await res.json();
+      if (data.series) {
+        setSeriesList(data.series);
+        if (!selectedManageSeries && data.series.length > 0) {
+          setSelectedManageSeries(data.series[0].id);
+        }
+      }
+    } catch {
+      // Non-fatal
+    }
+  };
+
+  useEffect(() => {
+    refreshAuthorData();
+  }, []);
 
   const handleCoverChange = (e) => {
     const file = e.target.files?.[0];
@@ -55,7 +90,6 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
   const handleImageFilesChange = (e) => {
     const files = Array.from(e.target.files || []);
-    // Sort naturally by file name (e.g. page-1, page-2, page-10)
     files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
     setImageFiles(files);
   };
@@ -90,7 +124,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
     const seriesName = isNewSeries
       ? newSeriesName.trim()
-      : existingSeries.find((s) => s.slug === selectedSeriesSlug)?.title;
+      : seriesList.find((s) => s.slug === selectedSeriesSlug)?.title;
 
     if (!seriesName) {
       setErrorAlert('Please provide or select a series title.');
@@ -120,14 +154,23 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
       const pageKeys = [];
 
       if (uploadMode === 'pdf') {
-        setStatusMessage('Initializing PDF engine...');
+        setStatusMessage('Initializing PDF worker engine...');
         const pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        // Bulletproof worker setup: CDN fallback prevents 404
+        try {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '6.3.289'}/build/pdf.worker.min.mjs`;
+        } catch {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        }
 
-        setStatusMessage('Reading PDF file...');
+        setStatusMessage('Reading PDF pages...');
         const pdfBytes = await pdfFile.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
         const totalPages = pdf.numPages;
+
+        if (totalPages === 0) {
+          throw new Error('The selected PDF has 0 pages.');
+        }
 
         for (let i = 1; i <= totalPages; i++) {
           const pct = Math.round(10 + (i / totalPages) * 70);
@@ -161,7 +204,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
           const file = imageFiles[i];
           const pct = Math.round(10 + ((i + 1) / totalImages) * 70);
           setUploadProgress(pct);
-          setStatusMessage(`Uploading page slice ${i + 1} of ${totalImages}...`);
+          setStatusMessage(`Uploading image strip ${i + 1} of ${totalImages}...`);
 
           const ext = file.name.split('.').pop() || 'jpg';
           const pageKey = `temp-pages/${slug}-ch${chapterNum}-${Date.now()}-page${i + 1}.${ext}`;
@@ -180,7 +223,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
       }
 
       setUploadProgress(92);
-      setStatusMessage('Registering chapter and finalizing pages in database...');
+      setStatusMessage('Saving chapter in database...');
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -210,6 +253,9 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
         chapterTitle: chapterTitle || `Chapter ${chapterNum}`,
       });
 
+      // Refresh author series list
+      refreshAuthorData();
+
       // Reset form
       setChapterTitle('');
       setChapterNum('');
@@ -225,12 +271,129 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
     }
   };
 
+  const handleDeleteChapter = async (chapterId, chapterNumber, seriesTitle) => {
+    if (!confirm(`Are you sure you want to delete Chapter ${chapterNumber} of "${seriesTitle}"? This will remove all its pages.`)) {
+      return;
+    }
+
+    setDeletingChapterId(chapterId);
+    try {
+      const res = await fetch(`/api/author/chapter?chapterId=${chapterId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(`Failed to delete chapter: ${data.error || 'Unknown error'}`);
+        return;
+      }
+
+      // Refresh list
+      await refreshAuthorData();
+    } catch (err) {
+      alert(`Delete chapter error: ${err.message}`);
+    } finally {
+      setDeletingChapterId(null);
+    }
+  };
+
   const inputClasses =
     "w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl px-4 py-3 text-xs text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-indigo-500 transition-colors";
   const labelClasses = "block text-xs font-bold text-[var(--text-main)] mb-1.5";
 
+  // Compute analytics
+  const totalChaptersCount = seriesList.reduce((acc, s) => acc + (s.chapterCount || s.chapters?.length || 0), 0);
+  const totalReadsCount = seriesList.reduce((acc, s) => acc + (s.viewsCount || 0), 0);
+  const activeManageSeriesObj = seriesList.find((s) => s.id === selectedManageSeries) || seriesList[0];
+
   return (
-    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+    <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-28">
+      {/* Studio Header Card */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Creator Studio</span>
+            </div>
+            <h1 className="font-serif-display text-2xl sm:text-3xl font-bold text-[var(--text-main)]">
+              Author Management
+            </h1>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
+              Publish new chapters, organize your manhwa catalog, and track reader engagement.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-secondary)] transition-colors"
+            >
+              <span>Reader View</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Quick Author Metric Badges */}
+        <div className="grid grid-cols-3 gap-3 pt-6 mt-6 border-t border-[var(--border-subtle)]">
+          <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center">
+            <p className="text-lg sm:text-xl font-bold text-[var(--text-main)]">{seriesList.length}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--text-secondary)]">Published Series</p>
+          </div>
+          <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center">
+            <p className="text-lg sm:text-xl font-bold text-[var(--text-main)]">{totalChaptersCount}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--text-secondary)]">Chapters Live</p>
+          </div>
+          <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center">
+            <p className="text-lg sm:text-xl font-bold text-indigo-600 dark:text-indigo-400">{totalReadsCount}</p>
+            <p className="text-[10px] sm:text-xs text-[var(--text-secondary)]">Total Reads</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] mb-6 pb-2 overflow-x-auto no-scrollbar">
+        <button
+          type="button"
+          onClick={() => setActiveTab('upload')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+            activeTab === 'upload'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <UploadCloud className="w-4 h-4" />
+          <span>Upload Chapter</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('manage')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+            activeTab === 'manage'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Series & Chapters ({seriesList.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('analytics')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+            activeTab === 'analytics'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Analytics</span>
+        </button>
+      </div>
+
       {/* Published Success Banner */}
       {publishedData && (
         <div className="mb-8 p-6 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 text-[var(--text-main)] shadow-lg shadow-emerald-500/5 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -284,269 +447,431 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
         </div>
       )}
 
-      {/* Main Studio Card */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-10 shadow-xs space-y-8">
-        {/* Card Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
+      {/* TAB 1: UPLOAD CHAPTER */}
+      {activeTab === 'upload' && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-10 shadow-xs space-y-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Creator Studio</span>
-            </div>
-            <h1 className="font-serif-display text-2xl sm:text-3xl font-bold text-[var(--text-main)]">
-              Publish Chapter
-            </h1>
-            <p className="text-xs text-[var(--text-secondary)] mt-1">
-              Upload and release vertical manhwa chapters in high definition.
+            <h2 className="text-lg font-bold text-[var(--text-main)]">Release New Chapter</h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Select an existing series or create a new one, then upload your chapter file.
             </p>
           </div>
 
-          {/* Quick link to reader */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-secondary)] transition-colors self-start sm:self-auto"
-          >
-            <span>View Reader</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
+          <form onSubmit={handleUpload} className="space-y-6">
+            {/* Series Selection */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className={labelClasses}>Select Series</label>
+                <select
+                  value={selectedSeriesSlug}
+                  onChange={(e) => setSelectedSeriesSlug(e.target.value)}
+                  className={inputClasses}
+                >
+                  {seriesList.map((s) => (
+                    <option key={s.slug} value={s.slug}>
+                      {s.title} ({s.chapterCount || s.chapters?.length || 0} chapters)
+                    </option>
+                  ))}
+                  <option value="__new__">+ Create New Series...</option>
+                </select>
+              </div>
 
-        <form onSubmit={handleUpload} className="space-y-6">
-          {/* Series Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className={labelClasses}>Select Series</label>
-              <select
-                value={selectedSeriesSlug}
-                onChange={(e) => setSelectedSeriesSlug(e.target.value)}
-                className={inputClasses}
-              >
-                {existingSeries.map((s) => (
-                  <option key={s.slug} value={s.slug}>
-                    {s.title}
-                  </option>
-                ))}
-                <option value="__new__">+ Create New Series...</option>
-              </select>
+              {isNewSeries && (
+                <div className="sm:col-span-2 space-y-4 p-5 rounded-2xl bg-[var(--bg-surface)] border border-indigo-500/30">
+                  <div>
+                    <label className={labelClasses}>New Series Title *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Solo Leveling"
+                      value={newSeriesName}
+                      onChange={(e) => setNewSeriesName(e.target.value)}
+                      className={inputClasses}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClasses}>Series Cover Image (Recommended: 3:4 portrait)</label>
+                    <div className="flex items-center gap-4">
+                      {coverPreview ? (
+                        <div className="relative w-20 h-28 rounded-xl overflow-hidden border border-indigo-500/40 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCoverFile(null);
+                              setCoverPreview(null);
+                            }}
+                            className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-28 border border-dashed border-[var(--border-strong)] rounded-2xl cursor-pointer hover:border-indigo-500 bg-[var(--bg-card)] transition-colors text-center px-4">
+                          <ImageIcon className="w-5 h-5 text-indigo-500 mb-1" />
+                          <span className="text-xs font-semibold text-[var(--text-main)]">
+                            Choose cover image
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                            JPG, PNG, or WEBP
+                          </span>
+                          <input
+                            ref={coverInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleCoverChange}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {isNewSeries && (
-              <div className="sm:col-span-2 space-y-4 p-5 rounded-2xl bg-[var(--bg-surface)] border border-indigo-500/30">
-                <div>
-                  <label className={labelClasses}>New Series Title *</label>
+            {/* Chapter Metadata */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className={labelClasses}>Chapter Number *</label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  placeholder="e.g. 1"
+                  value={chapterNum}
+                  onChange={(e) => setChapterNum(e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className={labelClasses}>Chapter Title (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. The Awakening"
+                  value={chapterTitle}
+                  onChange={(e) => setChapterTitle(e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+            </div>
+
+            {/* Upload Mode Switcher */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClasses}>Chapter Pages Source *</label>
+                <div className="flex items-center p-0.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('pdf')}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      uploadMode === 'pdf'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    Single PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('images')}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      uploadMode === 'images'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+                    }`}
+                  >
+                    Image Slices
+                  </button>
+                </div>
+              </div>
+
+              {uploadMode === 'pdf' ? (
+                <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-[var(--border-strong)] rounded-2xl cursor-pointer hover:border-indigo-500 bg-[var(--bg-surface)]/50 transition-colors p-6 text-center">
+                  <FileText className="w-8 h-8 text-indigo-500 mb-2" strokeWidth={1.5} />
+                  {pdfFile ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        {pdfFile.name}
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB — Ready to slice and upload
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-[var(--text-main)]">
+                        Click to choose PDF or drag and drop
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Our worker will automatically render and slice high-res vertical pages
+                      </p>
+                    </div>
+                  )}
                   <input
-                    type="text"
-                    required
-                    placeholder="e.g. Omniscient Reader's Perspective"
-                    value={newSeriesName}
-                    onChange={(e) => setNewSeriesName(e.target.value)}
-                    className={inputClasses}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-[var(--border-strong)] rounded-2xl cursor-pointer hover:border-indigo-500 bg-[var(--bg-surface)]/50 transition-colors p-6 text-center">
+                  <Layers className="w-8 h-8 text-indigo-500 mb-2" strokeWidth={1.5} />
+                  {imageFiles.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        {imageFiles.length} image slice(s) selected
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Sorted sequentially by filename (page-1, page-2...)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-[var(--text-main)]">
+                        Select image strips (PNG, JPG, WEBP)
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Multi-select files in reading order
+                      </p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={handleImageFilesChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* Upload Progress Bar */}
+            {uploading && (
+              <div className="space-y-2 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {statusMessage || 'Processing...'}
+                  </span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    {uploadProgress}%
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-300 rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
+              </div>
+            )}
 
-                <div>
-                  <label className={labelClasses}>Series Cover Image (Recommended: 3:4 portrait)</label>
-                  <div className="flex items-center gap-4">
-                    {coverPreview ? (
-                      <div className="relative w-20 h-28 rounded-xl overflow-hidden border border-indigo-500/40 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCoverFile(null);
-                            setCoverPreview(null);
-                          }}
-                          className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={uploading}
+              className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition-all"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing & Publishing...</span>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-4 h-4" />
+                  <span>Publish Chapter</span>
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 2: SERIES & CHAPTERS MANAGEMENT */}
+      {activeTab === 'manage' && (
+        <div className="space-y-6">
+          {seriesList.length === 0 ? (
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-12 text-center space-y-3">
+              <BookOpen className="w-10 h-10 text-indigo-500 mx-auto" />
+              <h3 className="text-sm font-bold text-[var(--text-main)]">No Series Published Yet</h3>
+              <p className="text-xs text-[var(--text-secondary)]">Use the Upload tab to create your first series and chapter.</p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('upload')}
+                className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
+              >
+                Upload Chapter
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Series Picker Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {seriesList.map((s) => {
+                  const isSelected = activeManageSeriesObj?.id === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => setSelectedManageSeries(s.id)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center gap-3.5 ${
+                        isSelected
+                          ? 'bg-indigo-50/10 dark:bg-indigo-950/40 border-indigo-500 ring-2 ring-indigo-500/20'
+                          : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-indigo-500/30'
+                      }`}
+                    >
+                      <div className="w-12 h-16 rounded-xl bg-[var(--bg-surface)] overflow-hidden shrink-0 border border-[var(--border-subtle)] relative">
+                        {s.cover_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={s.cover_url} alt={s.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-[var(--text-muted)] font-bold">
+                            📖
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-28 border border-dashed border-[var(--border-strong)] rounded-2xl cursor-pointer hover:border-indigo-500 bg-[var(--bg-card)] transition-colors text-center px-4">
-                        <ImageIcon className="w-5 h-5 text-indigo-500 mb-1" />
-                        <span className="text-xs font-semibold text-[var(--text-main)]">
-                          Choose cover image
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                          JPG, PNG, or WEBP
-                        </span>
-                        <input
-                          ref={coverInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCoverChange}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-[var(--text-main)] truncate">{s.title}</p>
+                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                          {s.chapterCount || s.chapters?.length || 0} chapters • {s.viewsCount || 0} reads
+                        </p>
+                        <div className="flex items-center gap-2 pt-1 text-[10px] text-indigo-500 font-semibold">
+                          <span>Manage Chapters</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Selected Series Chapters List */}
+              {activeManageSeriesObj && (
+                <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--text-main)]">
+                        Chapters for {activeManageSeriesObj.title}
+                      </h3>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        {activeManageSeriesObj.chapters?.length || 0} chapters uploaded
+                      </p>
+                    </div>
+                    <Link
+                      href={`/series/${activeManageSeriesObj.slug}`}
+                      className="inline-flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-400 font-semibold self-start sm:self-auto"
+                    >
+                      <span>View Series Public Page</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+
+                  {(!activeManageSeriesObj.chapters || activeManageSeriesObj.chapters.length === 0) ? (
+                    <p className="text-xs text-[var(--text-muted)] py-6 text-center">No chapters found for this series.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                      {activeManageSeriesObj.chapters
+                        .slice()
+                        .sort((a, b) => Number(b.chapter_number) - Number(a.chapter_number))
+                        .map((ch) => (
+                          <div
+                            key={ch.id}
+                            className="flex items-center justify-between p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] gap-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-xs text-[var(--text-main)]">
+                                  Ch. {ch.chapter_number}
+                                </span>
+                                {ch.title && (
+                                  <span className="text-xs text-[var(--text-secondary)] truncate">
+                                    — {ch.title}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{ch.created_at ? new Date(ch.created_at).toLocaleDateString() : 'Published'}</span>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Link
+                                href={`/reader/${activeManageSeriesObj.slug}/${ch.chapter_number}`}
+                                className="px-3 py-1.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
+                              >
+                                Read
+                              </Link>
+                              <button
+                                type="button"
+                                disabled={deletingChapterId === ch.id}
+                                onClick={() => handleDeleteChapter(ch.id, ch.chapter_number, activeManageSeriesObj.title)}
+                                className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors disabled:opacity-50"
+                                title="Delete Chapter"
+                              >
+                                {deletingChapterId === ch.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: CREATOR ANALYTICS */}
+      {activeTab === 'analytics' && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div>
+            <h2 className="text-base font-bold text-[var(--text-main)]">Realtime Studio Analytics</h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Live engagement data collected directly from reader sessions.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {seriesList.map((s) => (
+              <div
+                key={s.id}
+                className="p-5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[var(--text-main)] truncate max-w-[200px]">{s.title}</h4>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                    Live
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs">
+                  <div>
+                    <span className="text-[10px] text-[var(--text-muted)] block">Total Reads</span>
+                    <strong className="text-base font-bold text-[var(--text-main)]">{s.viewsCount || 0}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[var(--text-muted)] block">Chapters Published</span>
+                    <strong className="text-base font-bold text-[var(--text-main)]">{s.chapterCount || s.chapters?.length || 0}</strong>
                   </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
-
-          {/* Chapter Metadata */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className={labelClasses}>Chapter Number *</label>
-              <input
-                type="number"
-                step="any"
-                required
-                placeholder="e.g. 1"
-                value={chapterNum}
-                onChange={(e) => setChapterNum(e.target.value)}
-                className={inputClasses}
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className={labelClasses}>Chapter Title (Optional)</label>
-              <input
-                type="text"
-                placeholder="e.g. The Awakening"
-                value={chapterTitle}
-                onChange={(e) => setChapterTitle(e.target.value)}
-                className={inputClasses}
-              />
-            </div>
-          </div>
-
-          {/* Upload Mode Switcher */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className={labelClasses}>Chapter Pages Source *</label>
-              <div className="flex items-center p-0.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <button
-                  type="button"
-                  onClick={() => setUploadMode('pdf')}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    uploadMode === 'pdf'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
-                  }`}
-                >
-                  Single PDF
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadMode('images')}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    uploadMode === 'images'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
-                  }`}
-                >
-                  Image Slices
-                </button>
-              </div>
-            </div>
-
-            {uploadMode === 'pdf' ? (
-              <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-[var(--border-strong)] rounded-2xl cursor-pointer hover:border-indigo-500 bg-[var(--bg-surface)]/50 transition-colors p-6 text-center">
-                <FileText className="w-8 h-8 text-indigo-500 mb-2" strokeWidth={1.5} />
-                {pdfFile ? (
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                      {pdfFile.name}
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB — Ready to slice and upload
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-[var(--text-main)]">
-                      Click to choose PDF or drag and drop
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      Our worker will automatically render and slice high-res vertical pages
-                    </p>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-[var(--border-strong)] rounded-2xl cursor-pointer hover:border-indigo-500 bg-[var(--bg-surface)]/50 transition-colors p-6 text-center">
-                <Layers className="w-8 h-8 text-indigo-500 mb-2" strokeWidth={1.5} />
-                {imageFiles.length > 0 ? (
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                      {imageFiles.length} image slice(s) selected
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      Sorted sequentially by filename (page-1, page-2...)
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-[var(--text-main)]">
-                      Select image strips (PNG, JPG, WEBP)
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      Multi-select files in reading order
-                    </p>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/png, image/jpeg, image/webp"
-                  onChange={handleImageFilesChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-          </div>
-
-          {/* Upload Progress Bar */}
-          {uploading && (
-            <div className="space-y-2 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  {statusMessage || 'Processing...'}
-                </span>
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                  {uploadProgress}%
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-300 rounded-full"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={uploading}
-            className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition-all"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Processing & Publishing...</span>
-              </>
-            ) : (
-              <>
-                <UploadCloud className="w-4 h-4" />
-                <span>Publish Chapter</span>
-              </>
-            )}
-          </button>
-        </form>
-      </div>
+        </div>
+      )}
     </main>
   );
 }

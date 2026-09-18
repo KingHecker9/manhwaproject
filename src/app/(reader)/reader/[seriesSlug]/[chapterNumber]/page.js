@@ -10,22 +10,23 @@ export default async function ReaderPage({ params }) {
   const currentChapterNum = Number(chapterNumber);
 
   // 1. Get the series by slug
-  const { data: series } = await supabaseAdmin
+  const { data: seriesList } = await supabaseAdmin
     .from("series")
     .select("id, slug, title, cover_url")
-    .eq("slug", seriesSlug)
-    .single();
+    .eq("slug", seriesSlug);
 
+  const series = seriesList?.[0];
   if (!series) return notFound();
 
   // 2. Get the current chapter by series_id + chapter_number
-  const { data: chapter } = await supabaseAdmin
+  const { data: chapters } = await supabaseAdmin
     .from("chapters")
     .select("id, chapter_number, title")
     .eq("series_id", series.id)
     .eq("chapter_number", currentChapterNum)
-    .single();
+    .order("id", { ascending: false });
 
+  const chapter = chapters?.[0];
   if (!chapter) return notFound();
 
   // 3. Get all chapters of this series to determine next / prev and drawer list
@@ -73,13 +74,11 @@ export default async function ReaderPage({ params }) {
     .eq("chapter_id", chapter.id)
     .order("page_number", { ascending: true });
 
-  if (!pages || pages.length === 0) return notFound();
-
   return (
     <WebtoonsReader
       series={series}
       chapter={chapter}
-      pages={pages}
+      pages={pages || []}
       allChapters={sortedChapters}
       prevChapter={prevChapter}
       nextChapter={nextChapter}
