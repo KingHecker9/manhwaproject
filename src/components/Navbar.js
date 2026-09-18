@@ -110,17 +110,17 @@ export default function Navbar({ onOpenSearch }) {
         <div className="flex items-center gap-8 shrink-0">
           <Link
             href="/"
-            className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg p-1"
+            className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl p-1"
           >
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-200">
-              <BookOpen className="w-5 h-5" strokeWidth={2} />
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
+              <BookOpen className="w-5 h-5" strokeWidth={2.2} />
             </div>
             <div className="flex flex-col">
               <span className="font-serif-display text-xl font-bold tracking-tight text-[var(--text-main)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                Studio Reader
+                Lumina
               </span>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-[var(--text-muted)] -mt-1 font-semibold">
-                Webtoons
+              <span className="text-[10px] uppercase font-mono tracking-widest text-indigo-500 dark:text-indigo-400 -mt-1 font-bold">
+                Comics
               </span>
             </div>
           </Link>

@@ -3,8 +3,8 @@ import { Auth0Provider } from '@auth0/nextjs-auth0/client';
 import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata = {
-  title: 'Studio Reader — Premium Webtoons & Manhwa Platform',
-  description: 'Read your favorite manhwa chapters in high definition with a modern, distraction-free vertical reader.',
+  title: 'Lumina — Premium Manhwa & Comics Reader',
+  description: 'Read your favorite manhwa & digital comics in high definition with a modern, distraction-free vertical reader.',
 };
 
 export default function RootLayout({ children }) {

@@ -69,8 +69,8 @@ export function enrichSeries(series) {
     // Real rating only if supplied by database/user review; otherwise null
     rating: series.rating ? Number(series.rating) : null,
     releaseDay: calculatedReleaseDay || 'Weekly',
-    genres: (series.genres && series.genres.length > 0) ? series.genres : (info.genres || ['Action', 'Webtoon']),
-    synopsis: series.description || info.synopsis || 'Read this manhwa series on Studio Reader with high-definition vertical scrolling.',
+    genres: (series.genres && series.genres.length > 0) ? series.genres : (info.genres || ['Action', 'Fantasy']),
+    synopsis: series.description || info.synopsis || 'Read this manhwa series on Lumina Reader with high-definition vertical scrolling.',
     viewsCount: viewsFormatted,
     rawViewsCount: typeof series.viewsCount === 'number' ? series.viewsCount : 0,
     bookmarksCount: series.bookmarksCount ?? null,

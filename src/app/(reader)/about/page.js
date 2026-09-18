@@ -13,10 +13,10 @@ export default function AboutPage() {
             <span>About The Platform</span>
           </div>
           <h1 className="font-serif-display text-3xl sm:text-4xl font-bold text-[var(--text-main)]">
-            About Studio Reader
+            About Lumina
           </h1>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-2xl">
-            Studio Reader is a premier manhwa and webtoons reading destination crafted specifically for the digital strip format. Built with love by avid comic lovers and independent creators.
+            Lumina is a premier digital comics and manhwa reading destination crafted specifically for the modern vertical strip format. Built with love by comic lovers and independent creators.
           </p>
         </div>
 

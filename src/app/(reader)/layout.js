@@ -22,6 +22,20 @@ export default function ReaderLayout({ children }) {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [seriesList, setSeriesList] = useState([]);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Track scroll percentage for visual indicator
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollTop || document.body.scrollTop;
+      const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      if (windowHeight > 0) {
+        setScrollProgress((totalScroll / windowHeight) * 100);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Pre-load series list for search modal
   useEffect(() => {
@@ -40,7 +54,13 @@ export default function ReaderLayout({ children }) {
   const isReaderPage = pathname.startsWith('/reader/');
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200 relative">
+      {/* Scroll Progress Indicator */}
+      <div
+        className="fixed top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-400 z-50 transition-all duration-75 origin-left pointer-events-none"
+        style={{ transform: `scaleX(${Math.min(1, Math.max(0, scrollProgress / 100))})` }}
+      />
+
       {/* Sticky Top Navigation Bar (Hidden on reader page for distraction-free reading) */}
       {!isReaderPage && <Navbar onOpenSearch={() => setSearchOpen(true)} />}
 
@@ -115,15 +135,15 @@ export default function ReaderLayout({ children }) {
               {/* Brand column */}
               <div className="md:col-span-2 space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
                     <BookOpen className="w-4 h-4" strokeWidth={2} />
                   </div>
                   <span className="font-serif-display text-xl font-bold tracking-tight text-[var(--text-main)]">
-                    Studio Reader
+                    Lumina Comics
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] max-w-sm leading-relaxed">
-                  A premium, reader-focused manhwa platform. Read official chapters with continuous vertical scrolling, responsive layouts, and zero distractions.
+                  A premium, reader-focused digital comics platform. Read official manhwa chapters with continuous vertical scrolling, responsive layouts, and zero distractions.
                 </p>
                 <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pt-1">
                   <span>Built for creators and avid readers</span>
