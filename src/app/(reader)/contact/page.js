@@ -1,3 +1,5 @@
+'use client';
+
 import { Mail, MessageSquare, Send, Sparkles } from 'lucide-react';
 
 export default function ContactPage() {
