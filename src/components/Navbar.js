@@ -124,9 +124,22 @@ export default function Navbar({ onOpenSearch }) {
     { label: 'About', href: '/about', icon: BookOpen },
   ];
 
+  const [currentHash, setCurrentHash] = useState('');
+
+  useEffect(() => {
+    const updateHash = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentHash(window.location.hash);
+      }
+    };
+    updateHash();
+    window.addEventListener('hashchange', updateHash);
+    return () => window.removeEventListener('hashchange', updateHash);
+  }, []);
+
   const isActive = (href) => {
-    if (href === '/') return pathname === '/';
-    if (href.startsWith('/#')) return pathname === '/' && typeof window !== 'undefined' && window.location.hash === href.replace('/', '');
+    if (href === '/') return pathname === '/' && (!currentHash || currentHash === '#' || currentHash === '#discover');
+    if (href.startsWith('/#')) return pathname === '/' && currentHash === href.replace('/', '');
     return pathname.startsWith(href);
   };
 

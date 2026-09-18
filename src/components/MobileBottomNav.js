@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@auth0/nextjs-auth0/client';
@@ -16,14 +17,27 @@ export default function MobileBottomNav({ onOpenSearch }) {
   const pathname = usePathname();
   const { user } = useUser();
 
+  const [currentHash, setCurrentHash] = useState('');
+
+  useEffect(() => {
+    const updateHash = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentHash(window.location.hash);
+      }
+    };
+    updateHash();
+    window.addEventListener('hashchange', updateHash);
+    return () => window.removeEventListener('hashchange', updateHash);
+  }, []);
+
   // Hide mobile bottom nav inside reader page to preserve distraction-free reading
   if (pathname.startsWith('/reader/')) {
     return null;
   }
 
-  const isExplore = pathname === '/' && typeof window !== 'undefined' && !window.location.hash;
-  const isSchedule = pathname === '/' && typeof window !== 'undefined' && window.location.hash === '#schedule';
-  const isLibrary = (pathname === '/' && typeof window !== 'undefined' && window.location.hash === '#catalog') || pathname.startsWith('/series');
+  const isSchedule = pathname === '/' && currentHash === '#schedule';
+  const isLibrary = (pathname === '/' && currentHash === '#catalog') || pathname.startsWith('/series');
+  const isExplore = pathname === '/' && !isSchedule && !isLibrary;
   const isAccount = pathname.startsWith('/account') || pathname.startsWith('/author');
 
   return (
