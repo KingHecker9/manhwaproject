@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Sparkles, UploadCloud, FileText, Image as ImageIcon } from 'lucide-react';
 
 export default function AuthorDashboardForm({ existingSeries = [] }) {
   const [selectedSeriesSlug, setSelectedSeriesSlug] = useState(
@@ -16,7 +17,6 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
   const isNewSeries = selectedSeriesSlug === '__new__';
 
-  // Ask the server for a signed URL, then upload the blob directly to R2
   const uploadToR2 = async (key, blob, contentType) => {
     const res = await fetch('/api/upload-url', {
       method: 'POST',
@@ -49,18 +49,15 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
     setUploading(true);
 
     try {
-      // Load pdfjs-dist dynamically, browser-only — avoids server-side DOMMatrix crash
       const pdfjsLib = await import('pdfjs-dist');
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
       const slug = seriesName.toLowerCase().trim().replace(/\s+/g, '-');
 
-      // 1. Load the PDF in-browser
       setStatusMessage('Reading PDF...');
       const pdfBytes = await pdfFile.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
 
-      // 2. Render each page to canvas, convert to JPEG, upload to R2
       const pageKeys = [];
 
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -88,7 +85,6 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
         pageKeys.push(pageKey);
       }
 
-      // 3. Upload cover to R2 if provided (new series only)
       let coverKey = null;
       if (isNewSeries && coverFile) {
         setStatusMessage('Uploading cover...');
@@ -97,7 +93,6 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
         await uploadToR2(coverKey, coverFile, coverFile.type);
       }
 
-      // 4. Tell the server the files are ready — it just creates DB rows now
       setStatusMessage('Finalizing chapter...');
 
       const res = await fetch('/api/upload', {
@@ -130,26 +125,33 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
     }
   };
 
-  return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 p-8">
-      <div className="max-w-2xl mx-auto">
-        <header className="mb-8 border-b border-neutral-800 pb-4">
-          <p className="text-xs font-mono uppercase tracking-[0.2em] text-indigo-400 mb-2">
-            Creator Studio
-          </p>
-          <h1 className="text-2xl font-bold text-white">Author Portal</h1>
-          <p className="text-xs text-neutral-500 mt-1">Upload new chapters directly to the platform.</p>
-        </header>
+  const inputClasses =
+    "w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-xs text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-indigo-500 transition-colors";
+  const labelClasses = "block text-xs font-semibold text-[var(--text-main)] mb-1.5";
 
-        <form onSubmit={handleUpload} className="bg-neutral-900 border border-neutral-800 p-6 space-y-5">
+  return (
+    <main className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-8 sm:p-10 shadow-xs space-y-6">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 mb-3">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Creator Studio</span>
+          </div>
+          <h1 className="font-serif-display text-2xl sm:text-3xl font-bold text-[var(--text-main)]">
+            Author Portal
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed">
+            Upload new chapters directly to the platform.
+          </p>
+        </div>
+
+        <form onSubmit={handleUpload} className="space-y-4 pt-2">
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-              Series
-            </label>
+            <label className={labelClasses}>Series</label>
             <select
               value={selectedSeriesSlug}
               onChange={(e) => setSelectedSeriesSlug(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 text-white p-2.5 text-sm focus:outline-none focus:border-indigo-500"
+              className={inputClasses}
             >
               {existingSeries.map((s) => (
                 <option key={s.slug} value={s.slug}>{s.title}</option>
@@ -160,86 +162,87 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
           {isNewSeries && (
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-                New Series Title
-              </label>
+              <label className={labelClasses}>New Series Title</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. Shadow Monarch"
                 value={newSeriesName}
                 onChange={(e) => setNewSeriesName(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 text-white p-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                className={inputClasses}
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-              Chapter Number
-            </label>
+            <label className={labelClasses}>Chapter Number</label>
             <input
               type="number"
               required
               placeholder="e.g. 5"
               value={chapterNum}
               onChange={(e) => setChapterNum(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 text-white p-2.5 text-sm focus:outline-none focus:border-indigo-500"
+              className={inputClasses}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-              Chapter Title
-            </label>
+            <label className={labelClasses}>Chapter Title</label>
             <input
               type="text"
               required
               placeholder="e.g. The Return"
               value={chapterTitle}
               onChange={(e) => setChapterTitle(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 text-white p-2.5 text-sm focus:outline-none focus:border-indigo-500"
+              className={inputClasses}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-              Chapter PDF
+            <label className={labelClasses}>Chapter PDF</label>
+            <label className="flex items-center gap-3 w-full bg-[var(--bg-surface)] border border-dashed border-[var(--border-strong)] rounded-xl px-4 py-3.5 cursor-pointer hover:border-indigo-500 transition-colors">
+              <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+              <span className="text-xs text-[var(--text-secondary)] truncate">
+                {pdfFile ? pdfFile.name : "Choose a PDF file..."}
+              </span>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setPdfFile(e.target.files[0])}
+                className="hidden"
+              />
             </label>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => setPdfFile(e.target.files[0])}
-              className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:bg-indigo-600 file:text-white file:cursor-pointer cursor-pointer"
-            />
-            {pdfFile && <span className="text-xs text-neutral-500 mt-1 block">{pdfFile.name} selected</span>}
           </div>
 
           {isNewSeries && (
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wide text-neutral-400 mb-1.5">
-                Series Cover (optional)
+              <label className={labelClasses}>Series Cover (optional)</label>
+              <label className="flex items-center gap-3 w-full bg-[var(--bg-surface)] border border-dashed border-[var(--border-strong)] rounded-xl px-4 py-3.5 cursor-pointer hover:border-indigo-500 transition-colors">
+                <ImageIcon className="w-4 h-4 text-indigo-500 shrink-0" />
+                <span className="text-xs text-[var(--text-secondary)] truncate">
+                  {coverFile ? coverFile.name : "Choose a cover image..."}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setCoverFile(e.target.files[0])}
+                  className="hidden"
+                />
               </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setCoverFile(e.target.files[0])}
-                className="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:bg-indigo-600 file:text-white file:cursor-pointer cursor-pointer"
-              />
-              {coverFile && <span className="text-xs text-neutral-500 mt-1 block">{coverFile.name} selected</span>}
             </div>
           )}
 
           <button
             type="submit"
             disabled={uploading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 font-semibold text-sm transition text-white"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-[var(--bg-surface-hover)] disabled:text-[var(--text-muted)] text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all"
           >
-            {uploading ? 'Processing Upload...' : 'Publish Chapter'}
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>{uploading ? 'Processing Upload...' : 'Publish Chapter'}</span>
           </button>
 
           {statusMessage && (
-            <p className="text-xs text-center text-neutral-400 border-t border-neutral-800 pt-4">
+            <p className="text-xs text-center text-[var(--text-secondary)] border-t border-[var(--border-subtle)] pt-4">
               {statusMessage}
             </p>
           )}
