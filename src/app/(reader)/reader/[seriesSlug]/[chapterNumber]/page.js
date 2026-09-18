@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "../../../../../lib/supabase-admin";
 import { auth0 } from "../../../../../lib/auth0";
 import { notFound } from "next/navigation";
-import WebtoonsReader from "../WebtoonsReader";
+import WebtoonsReader from "../../WebtoonsReader";
 
 export const dynamic = "force-dynamic";
 
