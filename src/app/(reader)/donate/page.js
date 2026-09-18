@@ -1,3 +1,4 @@
+'use client';
 import { Heart, Sparkles, Coffee, Award, Check } from 'lucide-react';
 
 export default function DonatePage() {
