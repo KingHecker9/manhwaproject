@@ -118,18 +118,18 @@ export default function HeroCarousel({ featuredList = [] }) {
         <div className="md:col-span-8 space-y-3 sm:space-y-4 text-left">
           {/* Top Badges */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
-              <Flame className="w-3.5 h-3.5" />
-              <span>Featured</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 text-white shadow-md shadow-rose-500/25">
+              <Flame className="w-3.5 h-3.5 fill-current" />
+              <span>Spotlight Pick</span>
             </span>
 
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 backdrop-blur-md text-white border border-white/10">
-              <Calendar className="w-3 h-3 text-indigo-400" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-md text-white border border-white/15">
+              <Calendar className="w-3 h-3 text-cyan-300" />
               <span>{current.releaseDay} Release</span>
             </span>
 
             {current.rating && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md text-amber-300 border border-amber-400/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-black/50 backdrop-blur-md text-amber-300 border border-amber-400/30 shadow-xs">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 <span>{current.rating}</span>
               </span>
@@ -153,7 +153,7 @@ export default function HeroCarousel({ featuredList = [] }) {
             {(current.genres || []).map((genre) => (
               <span
                 key={genre}
-                className="px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-white/10 backdrop-blur-md text-neutral-200 border border-white/5"
+                className="px-2.5 py-0.5 sm:py-1 rounded-xl text-[11px] sm:text-xs font-semibold bg-white/10 backdrop-blur-md text-neutral-200 border border-white/10"
               >
                 {genre}
               </span>
@@ -169,7 +169,7 @@ export default function HeroCarousel({ featuredList = [] }) {
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-2">
             <Link
               href={`/series/${current.slug || current.id}`}
-              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-lg shadow-violet-600/30 active:scale-95 transition-all duration-200"
             >
               <BookOpen className="w-4 h-4" strokeWidth={2} />
               <span>Read Now</span>
@@ -178,39 +178,40 @@ export default function HeroCarousel({ featuredList = [] }) {
             <button
               onClick={toggleBookmark}
               type="button"
-              className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-sm font-semibold backdrop-blur-md transition-all duration-200 ${
+              className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-sm font-semibold backdrop-blur-md active:scale-95 transition-all duration-200 cursor-pointer ${
                 isBookmarked
-                  ? 'bg-white/20 border-indigo-400 text-indigo-300'
+                  ? 'bg-gradient-to-r from-violet-500/30 to-fuchsia-500/30 border-violet-400 text-violet-200'
                   : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
               }`}
             >
               <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} strokeWidth={2} />
-              <span>{isBookmarked ? 'Bookmarked' : 'Add to Shelf'}</span>
+              <span>{isBookmarked ? 'In Library' : 'Add to Shelf'}</span>
             </button>
           </div>
         </div>
 
         {/* Right Column: Hero Cover Card Display */}
-        <div className="hidden md:flex md:col-span-4 justify-end">
-          <div className="relative w-52 lg:w-60 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/15 transition-transform duration-300">
+        <div className="hidden md:flex md:col-span-4 justify-end items-center">
+          <div className="relative w-56 lg:w-64 aspect-[3/4] rounded-[28px] overflow-hidden shadow-2xl border-2 border-white/20 group-hover:scale-105 transition-transform duration-500">
             {current.cover ? (
               <Image
                 src={current.cover}
                 alt={current.title}
                 fill
-                sizes="(max-width: 1024px) 240px, 280px"
+                sizes="(max-width: 1024px) 260px, 320px"
                 className="object-cover"
               />
             ) : null}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 text-center">
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-indigo-300">
-                {current.chapterCount || 0} Chapters Available
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+            <div className="absolute bottom-3.5 left-3.5 right-3.5 text-center">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-300 drop-shadow-sm">
+                {current.chapterCount || 0} Chapters Live
               </span>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Navigation Controls: Arrows (Hidden on mobile to avoid covering content) */}
       {featuredList.length > 1 && (

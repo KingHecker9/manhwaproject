@@ -23,6 +23,7 @@ export async function GET() {
         title,
         slug,
         cover_url,
+        release_day,
         created_at,
         chapters(id, chapter_number, title, created_at)
       `)
@@ -61,3 +62,43 @@ export async function GET() {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const session = await auth0.getSession();
+    if (!session?.user?.sub) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const authorized = await isAuthor(session.user.sub);
+    if (!authorized) {
+      return NextResponse.json({ error: "Author access required" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { seriesId, releaseDay } = body;
+
+    if (!seriesId) {
+      return NextResponse.json({ error: "Series ID is required" }, { status: 400 });
+    }
+
+    const updates = {};
+    if (releaseDay) updates.release_day = releaseDay;
+
+    const { data, error } = await supabaseAdmin
+      .from("series")
+      .update(updates)
+      .eq("id", seriesId)
+      .eq("author_id", session.user.sub)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, series: data });
+  } catch (err) {
+    console.error("Author series update error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+

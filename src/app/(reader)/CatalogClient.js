@@ -197,8 +197,8 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
       <div className="fixed bottom-32 right-1/4 w-96 h-96 rounded-full bg-purple-500/10 dark:bg-purple-600/5 blur-[120px] pointer-events-none -z-10 animate-float-gentle" />
 
       {/* Sticky Section Segment Navigation Bar */}
-      <div className="sticky top-18 z-30 mb-6 py-2 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 bg-[var(--bg-main)]/80 backdrop-blur-md">
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xs no-scrollbar">
+      <div className="sticky top-18 z-30 mb-6 py-2 -mx-3.5 px-3.5 sm:mx-0 sm:px-0 bg-[var(--bg-main)]/85 backdrop-blur-xl flex justify-center">
+        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 rounded-full bg-[var(--bg-card)]/90 backdrop-blur-xl border border-[var(--border-subtle)] dark:border-white/10 shadow-lg no-scrollbar">
           {[
             { id: 'all', label: 'All Sections', icon: Layers },
             { id: 'featured', label: 'Spotlight', icon: Flame },
@@ -216,7 +216,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
                 onClick={() => setSectionView(tab.id)}
                 className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   isSelected
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 scale-102'
+                    ? 'bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 text-white shadow-md shadow-violet-600/30 scale-102'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
                 }`}
               >
@@ -230,19 +230,21 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
 
       {/* 1. Dynamic Hero Carousel (Featured Spotlight) */}
       {(sectionView === 'all' || sectionView === 'featured') && (
-        <div className="animate-in fade-in duration-300">
+        <div key={`hero-${sectionView}`} className="animate-tab-switch">
           <HeroCarousel featuredList={featured} />
         </div>
       )}
 
       {/* 2. Continue Reading Shelf (Real database or local reads) */}
       {(sectionView === 'all' || sectionView === 'featured') && (
-        <ContinueReading seriesList={seriesList} initialHistory={userHistory} />
+        <div key={`continue-${sectionView}`} className="animate-tab-switch">
+          <ContinueReading seriesList={seriesList} initialHistory={userHistory} />
+        </div>
       )}
 
       {/* 3. Top Rankings & Leaderboard Podium */}
       {(sectionView === 'all' || sectionView === 'rankings') && (
-        <section id="rankings" className="my-10 sm:my-14 scroll-mt-24 animate-in fade-in duration-300">
+        <section id="rankings" key={`rankings-${sectionView}`} className="my-10 sm:my-14 scroll-mt-24 animate-tab-switch">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
             <div>
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-500 mb-1">
@@ -396,10 +398,10 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
 
       {/* 4. Popular & Recommended (Ranked Visual Cards Grid) */}
       {(sectionView === 'all' || sectionView === 'featured') && (
-        <section className="my-10 sm:my-14 animate-in fade-in duration-300">
+        <section key={`trending-${sectionView}`} className="my-10 sm:my-14 animate-tab-switch">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-500 mb-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-500 mb-1">
                 <Flame className="w-3.5 h-3.5 fill-amber-500" />
                 <span>Trending Now</span>
               </div>
@@ -410,7 +412,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
             <button
               onClick={() => setSectionView('library')}
               type="button"
-              className="flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-400 transition-colors cursor-pointer"
             >
               <span>View Library</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -427,19 +429,21 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
 
       {/* 5. Support Creators / Buy Me a Coffee Showcase Banner */}
       {(sectionView === 'all' || sectionView === 'featured') && (
-        <SupportCreatorBanner
-          onOpenModal={() => setIsSupportModalOpen(true)}
-          creatorName="Independent Creators"
-        />
+        <div key={`bmc-${sectionView}`} className="animate-tab-switch">
+          <SupportCreatorBanner
+            onOpenModal={() => setIsSupportModalOpen(true)}
+            creatorName="Independent Creators"
+          />
+        </div>
       )}
 
       {/* 6. Latest Updates Section */}
       {(sectionView === 'all' || sectionView === 'updates') && (
-        <section id="latest" className="my-10 sm:my-14 scroll-mt-24 animate-in fade-in duration-300">
+        <section id="latest" key={`updates-${sectionView}`} className="my-10 sm:my-14 scroll-mt-24 animate-tab-switch">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">
-                <Sparkles className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-400 mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-violet-500" />
                 <span>Fresh Releases</span>
               </div>
               <h2 className="font-serif-display text-xl sm:text-3xl font-bold text-[var(--text-main)]">
@@ -478,16 +482,16 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xs">
                         Ch. {latestCh.chapter_number}
                       </span>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         NEW
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-xs sm:text-sm text-[var(--text-main)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                    <h3 className="font-bold text-xs sm:text-sm text-[var(--text-main)] group-hover:text-indigo-500 transition-colors truncate">
                       {series.title}
                     </h3>
 
@@ -504,20 +508,20 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
 
       {/* 7. Daily Schedule Calendar Grid */}
       {(sectionView === 'all' || sectionView === 'schedule') && (
-        <div className="animate-in fade-in duration-300">
+        <div key={`schedule-${sectionView}`} className="animate-tab-switch">
           <DailySchedule seriesList={seriesList} />
         </div>
       )}
 
       {/* 8. Full Library & Advanced Multi-Filter Catalog */}
       {(sectionView === 'all' || sectionView === 'library') && (
-        <section id="catalog" className="my-10 sm:my-14 scroll-mt-24 animate-in fade-in duration-300">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[36px] p-5 sm:p-8 shadow-xs">
+        <section id="catalog" key={`catalog-${sectionView}`} className="my-10 sm:my-14 scroll-mt-24 animate-tab-switch">
+          <div className="bg-[var(--bg-card)]/90 backdrop-blur-xl border border-[var(--border-subtle)] dark:border-white/10 rounded-[32px] sm:rounded-[40px] p-5 sm:p-8 shadow-sm">
             {/* Header & View Mode Switcher */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 pb-6 border-b border-[var(--border-subtle)]">
               <div>
-                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">
-                  <Layers className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-400 mb-1">
+                  <Layers className="w-3.5 h-3.5 text-violet-500" />
                   <span>Interactive Library</span>
                 </div>
                 <h2 className="font-serif-display text-xl sm:text-3xl font-bold text-[var(--text-main)]">
@@ -778,14 +782,14 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
                 )}
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5">
+              <div key={`grid-${activeTab}-${selectedGenre}-${statusFilter}-${lengthFilter}-${scheduleFilter}-${sortBy}`} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5 animate-tab-switch">
                 {filteredCatalog.map((series) => (
                   <ManhwaCard key={series.id} series={series} />
                 ))}
               </div>
             ) : (
               /* Compact List Mode */
-              <div className="space-y-3">
+              <div key={`list-${activeTab}-${selectedGenre}-${statusFilter}-${lengthFilter}-${scheduleFilter}-${sortBy}`} className="space-y-3 animate-tab-switch">
                 {filteredCatalog.map((series) => {
                   const latestCh = series.latestChapter?.chapter_number || series.chapterCount || 1;
                   return (

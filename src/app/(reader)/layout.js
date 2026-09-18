@@ -40,7 +40,22 @@ export default function ReaderLayout({ children }) {
 
   // Pre-load series list for search modal
   useEffect(() => {
-    // Keyboard shortcut / or Ctrl+K to open search
+    async function loadSeries() {
+      try {
+        const res = await fetch('/api/series');
+        const data = await res.json();
+        if (data.series && Array.isArray(data.series)) {
+          setSeriesList(data.series);
+        }
+      } catch (err) {
+        console.warn('Could not prefetch series for search:', err.message);
+      }
+    }
+    loadSeries();
+  }, []);
+
+  // Keyboard shortcut / or Ctrl+K to open search
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') ||
           ((e.metaKey || e.ctrlKey) && e.key === 'k')) {

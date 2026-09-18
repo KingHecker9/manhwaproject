@@ -49,7 +49,7 @@ export default async function AuthorDashboardPage() {
   // Fetch this author's existing series so they can pick from a dropdown
   const { data: existingSeries } = await supabaseAdmin
     .from("series")
-    .select("id, title, slug")
+    .select("id, title, slug, release_day")
     .eq("author_id", session.user.sub)
     .order("title", { ascending: true });
 

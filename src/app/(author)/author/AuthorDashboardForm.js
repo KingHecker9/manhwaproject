@@ -21,16 +21,21 @@ import {
   BarChart3,
   ExternalLink,
   ChevronRight,
-  Clock
+  Clock,
+  Radio,
+  Send,
+  Bell,
 } from 'lucide-react';
+import { DAYS_OF_WEEK } from '@/lib/series-metadata';
 
 export default function AuthorDashboardForm({ existingSeries = [] }) {
-  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'manage' | 'analytics'
+  const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'manage' | 'broadcast' | 'analytics'
   const [seriesList, setSeriesList] = useState(existingSeries);
   const [selectedSeriesSlug, setSelectedSeriesSlug] = useState(
     existingSeries.length > 0 ? existingSeries[0].slug : '__new__'
   );
   const [newSeriesName, setNewSeriesName] = useState('');
+  const [releaseDay, setReleaseDay] = useState('Monday');
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterNum, setChapterNum] = useState('');
 
@@ -52,7 +57,22 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
   const [selectedManageSeries, setSelectedManageSeries] = useState(
     existingSeries.length > 0 ? existingSeries[0].id : null
   );
+  const [manageReleaseDay, setManageReleaseDay] = useState('Monday');
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [scheduleSuccess, setScheduleSuccess] = useState('');
   const [deletingChapterId, setDeletingChapterId] = useState(null);
+
+  // Author broadcast notification state
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastSeriesSlug, setBroadcastSeriesSlug] = useState(
+    existingSeries.length > 0 ? existingSeries[0].slug : ''
+  );
+  const [broadcastType, setBroadcastType] = useState('announcement');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState('');
+  const [broadcastError, setBroadcastError] = useState('');
+  const [pastBroadcasts, setPastBroadcasts] = useState([]);
 
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
@@ -234,6 +254,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
           title: chapterTitle || `Chapter ${chapterNum}`,
           pageKeys,
           coverKey,
+          releaseDay,
         }),
       });
 
@@ -305,6 +326,85 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
   const totalChaptersCount = seriesList.reduce((acc, s) => acc + (s.chapterCount || s.chapters?.length || 0), 0);
   const totalReadsCount = seriesList.reduce((acc, s) => acc + (s.viewsCount || 0), 0);
   const activeManageSeriesObj = seriesList.find((s) => s.id === selectedManageSeries) || seriesList[0];
+
+  useEffect(() => {
+    if (activeManageSeriesObj?.release_day) {
+      setManageReleaseDay(activeManageSeriesObj.release_day);
+    }
+  }, [selectedManageSeries, activeManageSeriesObj]);
+
+  useEffect(() => {
+    if (!broadcastSeriesSlug && seriesList.length > 0) {
+      setBroadcastSeriesSlug(seriesList[0].slug);
+    }
+  }, [seriesList, broadcastSeriesSlug]);
+
+  const handleUpdateReleaseDay = async () => {
+    if (!selectedManageSeries) return;
+    setSavingSchedule(true);
+    setScheduleSuccess('');
+    try {
+      const res = await fetch('/api/author/series', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seriesId: selectedManageSeries,
+          releaseDay: manageReleaseDay,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to update schedule');
+      }
+      setScheduleSuccess(`Release schedule updated to ${manageReleaseDay}!`);
+      setTimeout(() => setScheduleSuccess(''), 3500);
+      await refreshAuthorData();
+    } catch (err) {
+      alert(`Update schedule error: ${err.message}`);
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
+  const handleSendBroadcast = async (e) => {
+    e.preventDefault();
+    if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
+      setBroadcastError('Please provide both an announcement title and message.');
+      return;
+    }
+    setBroadcastSending(true);
+    setBroadcastError('');
+    setBroadcastSuccess('');
+    try {
+      const selectedSeriesObj = seriesList.find((s) => s.slug === broadcastSeriesSlug);
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: broadcastTitle.trim(),
+          message: broadcastMessage.trim(),
+          seriesTitle: selectedSeriesObj?.title || null,
+          link: selectedSeriesObj?.slug ? `/series/${selectedSeriesObj.slug}` : '/#latest',
+          type: broadcastType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to broadcast announcement');
+      }
+      setBroadcastSuccess('Announcement broadcasted live to all reader navigation bars!');
+      if (data.notification) {
+        setPastBroadcasts((prev) => [data.notification, ...prev]);
+      }
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+      setTimeout(() => setBroadcastSuccess(''), 4500);
+    } catch (err) {
+      setBroadcastError(err.message || 'Error broadcasting announcement.');
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
 
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-28">
@@ -382,6 +482,19 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
         <button
           type="button"
+          onClick={() => setActiveTab('broadcast')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+            activeTab === 'broadcast'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+          }`}
+        >
+          <Radio className="w-4 h-4" />
+          <span>Announcements & Alerts</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('analytics')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
             activeTab === 'analytics'
@@ -449,7 +562,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
       {/* TAB 1: UPLOAD CHAPTER */}
       {activeTab === 'upload' && (
-        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-10 shadow-xs space-y-6">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-10 shadow-xs space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div>
             <h2 className="text-lg font-bold text-[var(--text-main)]">Release New Chapter</h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -474,6 +587,25 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
                   ))}
                   <option value="__new__">+ Create New Series...</option>
                 </select>
+              </div>
+
+              {/* Weekly Release Day Selector */}
+              <div className="sm:col-span-2">
+                <label className={labelClasses}>Weekly Release Day</label>
+                <select
+                  value={releaseDay}
+                  onChange={(e) => setReleaseDay(e.target.value)}
+                  className={inputClasses}
+                >
+                  {DAYS_OF_WEEK.map((d) => (
+                    <option key={d} value={d}>
+                      {d} Release (Weekly Calendar)
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                  Sets the day this series is highlighted on the reader homepage weekly release schedule.
+                </p>
               </div>
 
               {isNewSeries && (
@@ -697,7 +829,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
 
       {/* TAB 2: SERIES & CHAPTERS MANAGEMENT */}
       {activeTab === 'manage' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
           {seriesList.length === 0 ? (
             <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-12 text-center space-y-3">
               <BookOpen className="w-10 h-10 text-indigo-500 mx-auto" />
@@ -740,7 +872,7 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold text-[var(--text-main)] truncate">{s.title}</p>
                         <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                          {s.chapterCount || s.chapters?.length || 0} chapters • {s.viewsCount || 0} reads
+                          {s.chapterCount || s.chapters?.length || 0} chapters • {s.viewsCount || 0} reads • {s.release_day || 'Monday'}s
                         </p>
                         <div className="flex items-center gap-2 pt-1 text-[10px] text-indigo-500 font-semibold">
                           <span>Manage Chapters</span>
@@ -772,6 +904,48 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Link>
                   </div>
+
+                  {/* Weekly Release Schedule Setting for Author */}
+                  <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-indigo-500" />
+                        <h4 className="text-xs font-bold text-[var(--text-main)]">Weekly Release Day</h4>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        Controls which day of the week this series appears on the platform schedule calendar.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <select
+                        value={manageReleaseDay}
+                        onChange={(e) => setManageReleaseDay(e.target.value)}
+                        className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-main)] focus:outline-none focus:border-indigo-500"
+                      >
+                        {DAYS_OF_WEEK.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleUpdateReleaseDay}
+                        disabled={savingSchedule}
+                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        {savingSchedule ? 'Saving...' : 'Update Schedule'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {scheduleSuccess && (
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-2 animate-in fade-in">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>{scheduleSuccess}</span>
+                    </div>
+                  )}
 
                   {(!activeManageSeriesObj.chapters || activeManageSeriesObj.chapters.length === 0) ? (
                     <p className="text-xs text-[var(--text-muted)] py-6 text-center">No chapters found for this series.</p>
@@ -834,9 +1008,176 @@ export default function AuthorDashboardForm({ existingSeries = [] }) {
         </div>
       )}
 
-      {/* TAB 3: CREATOR ANALYTICS */}
+      {/* TAB 3: AUTHOR ANNOUNCEMENTS & BROADCASTS */}
+      {activeTab === 'broadcast' && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-10 shadow-xs space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div>
+            <div className="flex items-center gap-2 text-indigo-500 mb-1">
+              <Radio className="w-4 h-4 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider">Reader Broadcast System</span>
+            </div>
+            <h2 className="text-lg font-bold text-[var(--text-main)]">Send Announcement to Readers</h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Broadcast direct release alerts, chapter delays, or milestones directly into the reader navigation bar.
+            </p>
+          </div>
+
+          {broadcastSuccess && (
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{broadcastSuccess}</span>
+            </div>
+          )}
+
+          {broadcastError && (
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{broadcastError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSendBroadcast} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Associated Series</label>
+                <select
+                  value={broadcastSeriesSlug}
+                  onChange={(e) => setBroadcastSeriesSlug(e.target.value)}
+                  className={inputClasses}
+                >
+                  {seriesList.map((s) => (
+                    <option key={s.slug} value={s.slug}>
+                      {s.title}
+                    </option>
+                  ))}
+                  <option value="">General Platform Announcement</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelClasses}>Announcement Category</label>
+                <select
+                  value={broadcastType}
+                  onChange={(e) => setBroadcastType(e.target.value)}
+                  className={inputClasses}
+                >
+                  <option value="chapter">Fresh Chapter Alert</option>
+                  <option value="announcement">Important Notice / Hiatus</option>
+                  <option value="milestone">Celebration / Milestone</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelClasses}>Notification Title *</label>
+                <span className={`text-[10px] font-mono ${broadcastTitle.length > 55 ? 'text-amber-500 font-bold' : 'text-[var(--text-muted)]'}`}>
+                  {broadcastTitle.length}/60
+                </span>
+              </div>
+              <input
+                type="text"
+                required
+                maxLength={60}
+                placeholder="e.g. Chapter 45 Out Now / Special Break Notice"
+                value={broadcastTitle}
+                onChange={(e) => setBroadcastTitle(e.target.value)}
+                className={inputClasses}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelClasses}>Notification Message *</label>
+                <span className={`text-[10px] font-mono ${broadcastMessage.length > 185 ? 'text-amber-500 font-bold' : 'text-[var(--text-muted)]'}`}>
+                  {broadcastMessage.length}/200
+                </span>
+              </div>
+              <textarea
+                required
+                rows={3}
+                maxLength={200}
+                placeholder="e.g. The climactic battle begins! Read with full color vertical scrolling on Lumina Comics."
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                className={`${inputClasses} resize-none`}
+              />
+            </div>
+
+            {/* Live Reader Preview Box */}
+            <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                <span className="font-semibold uppercase tracking-wider">Live Reader Preview (Notifications Bell)</span>
+                <span className="text-[10px] text-indigo-500 font-mono">Realtime Preview</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-[var(--bg-card)] border border-indigo-500/20 shadow-xs flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-cyan-400 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-[var(--text-main)] truncate">
+                      {broadcastTitle || 'Your Announcement Title'}
+                    </h4>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono">Just now</span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+                    {broadcastMessage || 'Your message will appear here for all readers on the platform.'}
+                  </p>
+                  <span className="inline-block mt-1 text-[10px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-cyan-400">
+                    By Verified Author
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={broadcastSending}
+              className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 hover:opacity-90 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-violet-600/25 transition-all cursor-pointer"
+            >
+              {broadcastSending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Broadcasting to Readers...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>Broadcast to Readers Now</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Past Broadcasts */}
+          {pastBroadcasts.length > 0 && (
+            <div className="pt-6 border-t border-[var(--border-subtle)] space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Recent Broadcasts Sent
+              </h3>
+              <div className="space-y-2">
+                {pastBroadcasts.map((b) => (
+                  <div
+                    key={b.id}
+                    className="p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-[var(--text-main)] truncate">{b.title}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">{b.message}</p>
+                    </div>
+                    <span className="text-[10px] text-emerald-500 font-bold shrink-0">Live</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: CREATOR ANALYTICS */}
       {activeTab === 'analytics' && (
-        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div>
             <h2 className="text-base font-bold text-[var(--text-main)]">Realtime Studio Analytics</h2>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">

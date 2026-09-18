@@ -20,7 +20,7 @@ export async function POST(request) {
 
     // 2. Parse JSON body (files already uploaded to R2 client-side)
     const body = await request.json();
-    const { series: seriesName, chapter: chapterNum, title: chapterTitle, pageKeys, coverKey } = body;
+    const { series: seriesName, chapter: chapterNum, title: chapterTitle, pageKeys, coverKey, releaseDay } = body;
 
     if (!seriesName || chapterNum === undefined || !chapterTitle || !pageKeys?.length) {
       return NextResponse.json(
@@ -36,22 +36,27 @@ export async function POST(request) {
 
     let { data: series } = await supabaseAdmin
       .from("series")
-      .select("id, slug, title")
+      .select("id, slug, title, release_day")
       .eq("slug", slug)
       .maybeSingle();
 
     if (!series) {
       const coverUrl = coverKey ? publicUrl(coverKey) : null;
 
+      const seriesPayload = {
+        title: seriesName.trim(),
+        slug,
+        author_id: authorId,
+        cover_url: coverUrl,
+      };
+      if (releaseDay) {
+        seriesPayload.release_day = releaseDay;
+      }
+
       const { data: newSeries, error: seriesError } = await supabaseAdmin
         .from("series")
-        .insert({
-          title: seriesName.trim(),
-          slug,
-          author_id: authorId,
-          cover_url: coverUrl,
-        })
-        .select("id, slug, title")
+        .insert(seriesPayload)
+        .select("id, slug, title, release_day")
         .single();
 
       if (seriesError) {
@@ -59,6 +64,15 @@ export async function POST(request) {
         throw new Error(`Failed to create series: ${seriesError.message}`);
       }
       series = newSeries;
+    } else if (releaseDay && releaseDay !== series.release_day) {
+      try {
+        await supabaseAdmin
+          .from("series")
+          .update({ release_day: releaseDay })
+          .eq("id", series.id);
+      } catch (e) {
+        console.warn("Could not update series release_day:", e.message);
+      }
     }
 
     // 4. Create chapter row

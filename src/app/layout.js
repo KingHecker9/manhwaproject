@@ -1,6 +1,5 @@
 import './globals.css';
-import { Auth0Provider } from '@auth0/nextjs-auth0/client';
-import { ThemeProvider } from '../components/ThemeProvider';
+import Providers from '../components/Providers';
 
 export const metadata = {
   title: 'Lumina — Premium Manhwa & Comics Reader',
@@ -33,9 +32,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] selection:bg-indigo-500 selection:text-white antialiased">
-        <Auth0Provider>
-          <ThemeProvider>{children}</ThemeProvider>
-        </Auth0Provider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
