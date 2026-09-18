@@ -60,7 +60,7 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
       {/* Profile Header Card */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden mb-8">
+      <div className="bg-[var(--bg-card)]/95 backdrop-blur-xl border border-[var(--border-subtle)] rounded-[32px] p-6 sm:p-8 shadow-xs relative overflow-hidden mb-8">
         <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 dark:bg-indigo-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
         <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
@@ -87,7 +87,7 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
           <div className="space-y-2 flex-1 min-w-0">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <h1 className="font-serif-display text-2xl sm:text-3xl font-bold text-[var(--text-main)] truncate">
-                {user.name || 'Studio Reader'}
+                {user.name || 'Lumina Reader'}
               </h1>
               {authorized ? (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400">
@@ -239,7 +239,7 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
                   <Link
                     key={idx}
                     href={`/reader/${seriesSlug}/${chapterNum}`}
-                    className="flex items-center gap-3.5 p-3 rounded-2xl bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] hover:border-indigo-500/40 transition-all group shadow-xs"
+                    className="flex items-center gap-3.5 p-3 rounded-[24px] bg-[var(--bg-card)]/90 backdrop-blur-md hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] hover:border-indigo-500/50 card-expand shimmer-shine transition-all group shadow-xs"
                   >
                     {/* Cover Thumbnail */}
                     <div className="w-12 h-16 rounded-xl bg-[var(--bg-surface)] overflow-hidden shrink-0 border border-[var(--border-subtle)] relative">
@@ -315,7 +315,7 @@ export default function AccountClient({ user, authorized, readingRows = [] }) {
                 <Link
                   key={slug}
                   href={`/series/${slug}`}
-                  className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/40 transition-all group space-y-2 text-center"
+                  className="p-4 rounded-[28px] bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-indigo-500/50 card-expand shimmer-shine transition-all group space-y-2 text-center"
                 >
                   <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
                     <BookOpen className="w-5 h-5" />

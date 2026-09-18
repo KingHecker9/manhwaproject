@@ -69,21 +69,36 @@ export default function AuthorLayout({ children }) {
 
       {/* Mobile Dropdown Menu */}
       {mobileOpen && (
-        <div className="sm:hidden border-b border-[var(--border-subtle)] p-4 space-y-3 bg-[var(--bg-card)] animate-in slide-in-from-top duration-200">
-          <Link
-            href="/"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Lumina Library</span>
-          </Link>
+        <div className="sm:hidden border-b border-[var(--border-subtle)] p-4 space-y-3 bg-[var(--bg-card)]/95 backdrop-blur-2xl animate-in slide-in-from-top duration-200">
+          <div className="space-y-1">
+            <Link
+              href="/author"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Publish & Manage Chapters</span>
+            </Link>
+            <Link
+              href="/"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Reader Home</span>
+            </Link>
+          </div>
 
           {!isLoading && user && (
-            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
-              <div className="px-3">
-                <p className="text-xs font-bold text-[var(--text-main)] truncate">{user.name || 'Author'}</p>
-                <p className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</p>
+            <div className="space-y-2 pt-3 border-t border-[var(--border-subtle)]">
+              <div className="flex items-center gap-2.5 px-2">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950/80 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-bold ring-2 ring-indigo-500/20 shrink-0">
+                  {(user.name || user.email || 'A')[0].toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-[var(--text-main)] truncate">{user.name || 'Author'}</p>
+                  <p className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</p>
+                </div>
               </div>
               <a
                 href="/auth/logout"

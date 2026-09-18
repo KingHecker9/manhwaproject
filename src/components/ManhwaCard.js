@@ -37,7 +37,7 @@ export default function ManhwaCard({ series, rank, progress, showLatest = true }
   const latestChapterNum = series.latestChapter?.chapter_number || series.chapterCount;
 
   return (
-    <div className="group relative flex flex-col bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/40 rounded-3xl overflow-hidden shadow-xs hover-lift transition-all duration-300">
+    <div className="group relative flex flex-col bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-indigo-500/50 rounded-[28px] overflow-hidden shadow-xs card-expand shimmer-shine transition-all duration-300">
       {/* Cover Image Container */}
       <Link href={`/series/${series.slug || series.id}`} className="relative block aspect-[3/4] w-full overflow-hidden bg-[var(--bg-surface)]">
         {series.cover ? (
@@ -46,7 +46,7 @@ export default function ManhwaCard({ series, rank, progress, showLatest = true }
             alt={series.title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
+            className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-[var(--text-muted)] bg-[var(--bg-surface)]">

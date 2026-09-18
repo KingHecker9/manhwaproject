@@ -92,7 +92,7 @@ export default function HeroCarousel({ featuredList = [] }) {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full rounded-3xl overflow-hidden bg-neutral-950 text-white shadow-xl border border-[var(--border-subtle)] my-4 sm:my-6 min-h-[380px] sm:min-h-[460px] flex items-center"
+      className="relative w-full rounded-[32px] sm:rounded-[36px] overflow-hidden bg-neutral-950 text-white shadow-2xl border border-white/10 my-4 sm:my-6 min-h-[380px] sm:min-h-[460px] flex items-center"
     >
       {/* Background Cover with Cinematic Blur & Gradient */}
       <div className="absolute inset-0 z-0">

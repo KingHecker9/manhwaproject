@@ -300,7 +300,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
                 <Link
                   key={item.id}
                   href={`/series/${item.slug || item.id}`}
-                  className={`relative p-5 sm:p-6 rounded-[32px] border transition-all duration-300 hover-lift group overflow-hidden flex items-center gap-4 ${
+                  className={`relative p-5 sm:p-6 rounded-[32px] border transition-all duration-300 card-expand shimmer-shine group overflow-hidden flex items-center gap-4 ${
                     rank === 1
                       ? 'bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-amber-500/5 border-amber-500/40 shadow-xl shadow-amber-500/5'
                       : rank === 2
@@ -362,7 +362,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
                   <Link
                     key={item.id}
                     href={`/series/${item.slug || item.id}`}
-                    className="flex items-center gap-3 p-3.5 rounded-[24px] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/40 hover-lift transition-all group"
+                    className="flex items-center gap-3 p-3.5 rounded-[28px] bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-indigo-500/50 card-expand shimmer-shine transition-all group"
                   >
                     <span className="w-8 h-8 rounded-xl bg-[var(--bg-surface)] text-[var(--text-secondary)] font-bold text-xs flex items-center justify-center shrink-0 border border-[var(--border-subtle)]">
                       #{rank}
@@ -458,7 +458,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
                 <Link
                   key={series.id}
                   href={`/reader/${series.slug}/${latestCh.chapter_number}`}
-                  className="flex items-center gap-3.5 p-3.5 rounded-[28px] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/40 shadow-xs hover-lift transition-all group"
+                  className="flex items-center gap-3.5 p-3.5 rounded-[28px] bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-indigo-500/50 shadow-xs card-expand shimmer-shine transition-all group"
                 >
                   <div className="relative w-16 h-22 rounded-2xl overflow-hidden bg-[var(--bg-surface)] shrink-0 border border-[var(--border-subtle)]">
                     {series.cover ? (

@@ -63,7 +63,7 @@ export default function DonatePage() {
           Fuel Our Manhwa Journey
         </h1>
         <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-          Studio Reader is proudly ad-free and dedicated to providing high-definition reader experiences. Your contributions go directly towards creator compensation, digital translation, and high-speed image CDNs.
+          Lumina is proudly ad-free and dedicated to providing high-definition reader experiences. Your contributions go directly towards creator compensation, digital translation, and high-speed image CDNs.
         </p>
       </div>
 
@@ -175,7 +175,7 @@ export default function DonatePage() {
       <SupportCreatorModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        creatorName={selectedTier ? `${selectedTier.name} Supporter` : 'Studio Reader'}
+        creatorName={selectedTier ? `${selectedTier.name} Supporter` : 'Lumina Creators'}
       />
     </main>
   );

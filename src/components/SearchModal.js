@@ -52,7 +52,7 @@ export default function SearchModal({ isOpen, onClose, seriesList = [] }) {
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-2xl bg-[var(--bg-card)]/95 backdrop-blur-2xl border border-[var(--border-subtle)] dark:border-white/10 rounded-[32px] shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
         {/* Search Input Bar */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border-subtle)]">
           <Search className="w-5 h-5 text-indigo-500 shrink-0" strokeWidth={2} />

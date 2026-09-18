@@ -198,7 +198,7 @@ export default function WebtoonsReader({
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Link
             href={`/series/${series.slug}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-neutral-300 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-neutral-300 hover:text-white transition-colors shrink-0"
             title="Return to Series"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export default function WebtoonsReader({
           <button
             onClick={() => setDrawerOpen(true)}
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-medium text-neutral-300 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-medium text-neutral-300 hover:text-white transition-colors cursor-pointer"
           >
             <List className="w-3.5 h-3.5 text-indigo-400" />
             <span className="hidden sm:inline">Chapters</span>
@@ -232,7 +232,7 @@ export default function WebtoonsReader({
             onClick={toggleBookmark}
             type="button"
             aria-label="Bookmark Series"
-            className={`p-2 rounded-xl border transition-colors ${
+            className={`p-2 rounded-2xl border transition-colors cursor-pointer ${
               isBookmarked
                 ? 'bg-indigo-600/30 border-indigo-500 text-indigo-400'
                 : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
@@ -394,14 +394,14 @@ export default function WebtoonsReader({
           {prevChapter ? (
             <Link
               href={`/reader/${series.slug}/${prevChapter.chapter_number}`}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-white transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Ch. {prevChapter.chapter_number}</span>
               <span className="sm:hidden">Prev</span>
             </Link>
           ) : (
-            <span className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-neutral-900/40 text-neutral-600 text-xs font-semibold border border-neutral-900 cursor-not-allowed">
+            <span className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-2xl bg-neutral-900/40 text-neutral-600 text-xs font-semibold border border-neutral-900 cursor-not-allowed">
               <ChevronLeft className="w-4 h-4" />
               <span>Start</span>
             </span>
@@ -411,7 +411,7 @@ export default function WebtoonsReader({
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[11px] font-semibold text-neutral-300"
+            className="sm:hidden flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-[11px] font-semibold text-neutral-300 cursor-pointer"
           >
             <List className="w-3.5 h-3.5 text-indigo-400" />
             <span>Ch. {chapter.chapter_number}</span>
@@ -473,7 +473,7 @@ export default function WebtoonsReader({
           {nextChapter ? (
             <Link
               href={`/reader/${series.slug}/${nextChapter.chapter_number}`}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-md shadow-indigo-600/30 transition-all"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
             >
               <span className="hidden sm:inline">Ch. {nextChapter.chapter_number}</span>
               <span className="sm:hidden">Next</span>
@@ -482,7 +482,7 @@ export default function WebtoonsReader({
           ) : (
             <Link
               href={`/series/${series.slug}`}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer"
             >
               <span>Overview</span>
               <ChevronRight className="w-4 h-4" />

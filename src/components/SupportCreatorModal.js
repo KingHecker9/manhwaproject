@@ -68,7 +68,7 @@ export function SupportCreatorBanner({ onOpenModal, creatorName = 'Creators' }) 
               Love the chapters? Support our creators!
             </h3>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed">
-              We keep Studio Reader clean, fast, and 100% ad-free. Your direct coffee tips go straight to manhwa authors and digital translation teams to fund new chapter releases.
+              We keep Lumina clean, fast, and 100% ad-free. Your direct coffee tips go straight to manhwa authors and digital translation teams to fund new chapter releases.
             </p>
           </div>
         </div>

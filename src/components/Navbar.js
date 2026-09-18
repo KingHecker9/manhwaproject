@@ -152,31 +152,31 @@ export default function Navbar({ onOpenSearch }) {
         </div>
 
         {/* Right Section: Search, Notifications, Theme, Auth, Mobile Toggle */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quick Search trigger */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Quick Search trigger - icon on mobile, expanded on desktop */}
           <button
             onClick={() => onOpenSearch ? onOpenSearch() : window.location.assign('/#catalog')}
             type="button"
             aria-label="Search manhwa"
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--text-muted)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] rounded-xl transition-all duration-150 group"
+            className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-xs text-[var(--text-muted)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] rounded-2xl transition-all duration-150 group cursor-pointer"
           >
-            <Search className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-indigo-600 transition-colors" strokeWidth={2} />
+            <Search className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-indigo-500 transition-colors" strokeWidth={2} />
             <span className="hidden sm:inline">Search manhwa...</span>
             <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded text-[var(--text-muted)]">
               /
             </kbd>
           </button>
 
-          {/* Support Creators / Buy Me a Coffee */}
+          {/* Support Creators / Buy Me a Coffee - desktop badge */}
           <button
             onClick={() => setBmcModalOpen(true)}
             type="button"
             aria-label="Support Creators"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-xs hover:shadow-amber-400/25 active:scale-95 transition-all cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 rounded-2xl shadow-xs hover:shadow-amber-400/25 active:scale-95 transition-all cursor-pointer"
             title="Support creators with Buy Me a Coffee"
           >
             <Coffee className="w-3.5 h-3.5 fill-neutral-950" />
-            <span className="hidden sm:inline">Support</span>
+            <span>Support</span>
           </button>
 
           {/* Theme switcher */}
@@ -185,29 +185,29 @@ export default function Navbar({ onOpenSearch }) {
             type="button"
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-transparent hover:border-[var(--border-subtle)] transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="p-2 rounded-2xl text-[var(--text-secondary)] hover:text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] transition-all duration-150 cursor-pointer"
           >
             {theme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" strokeWidth={2} />
             ) : (
-              <Moon className="w-4 h-4 text-indigo-600" strokeWidth={2} />
+              <Moon className="w-4 h-4 text-indigo-500" strokeWidth={2} />
             )}
           </button>
 
-          {/* Notifications Dropdown */}
-          <div className="relative" ref={notifRef}>
+          {/* Notifications Dropdown (Desktop/Tablet) */}
+          <div className="relative hidden md:block" ref={notifRef}>
             <button
               onClick={() => setNotificationsOpen((v) => !v)}
               type="button"
               aria-label="Notifications"
-              className="relative p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-transparent hover:border-[var(--border-subtle)] transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="relative p-2 rounded-2xl text-[var(--text-secondary)] hover:text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] transition-all duration-150 cursor-pointer"
             >
               <Bell className="w-4 h-4" strokeWidth={2} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full ring-2 ring-[var(--bg-card)]" />
             </button>
 
             {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-xl py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-card)]/95 backdrop-blur-2xl border border-[var(--border-subtle)] rounded-3xl shadow-2xl py-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-4 pb-2 border-b border-[var(--border-subtle)] flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-main)]">
                     Notifications
@@ -249,14 +249,14 @@ export default function Navbar({ onOpenSearch }) {
                     onClick={() => setProfileOpen((v) => !v)}
                     type="button"
                     aria-label="User Account Menu"
-                    className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[var(--bg-surface)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
                   >
                     <Avatar user={user} />
                     <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] hidden sm:inline" strokeWidth={2} />
                   </button>
 
                   {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-60 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-xl py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-64 bg-[var(--bg-card)]/95 backdrop-blur-2xl border border-[var(--border-subtle)] rounded-3xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                       <div className="px-4 py-2.5 border-b border-[var(--border-subtle)]">
                         <p className="text-xs font-semibold text-[var(--text-main)] truncate">
                           {user.name || 'Reader'}
@@ -308,7 +308,7 @@ export default function Navbar({ onOpenSearch }) {
               ) : (
                 <a
                   href="/auth/login?returnTo=/"
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold tracking-wide transition-all shadow-sm shadow-indigo-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold tracking-wide transition-all shadow-md shadow-indigo-600/25 cursor-pointer"
                 >
                   Log In / Sign Up
                 </a>
@@ -321,129 +321,206 @@ export default function Navbar({ onOpenSearch }) {
             onClick={() => setMobileOpen((v) => !v)}
             type="button"
             aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
-            className="lg:hidden p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-[var(--border-subtle)] transition-colors"
+            className="lg:hidden p-2 rounded-2xl text-[var(--text-secondary)] hover:text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-subtle)] transition-all cursor-pointer"
           >
             {mobileOpen ? (
-              <X className="w-5 h-5 text-[var(--text-main)]" strokeWidth={2} />
+              <X className="w-5 h-5 text-[var(--text-main)]" strokeWidth={2.2} />
             ) : (
-              <Menu className="w-5 h-5 text-[var(--text-main)]" strokeWidth={2} />
+              <Menu className="w-5 h-5 text-[var(--text-main)]" strokeWidth={2.2} />
             )}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Luxury Mobile Slide-Over Glass Drawer */}
       {mobileOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          className="lg:hidden fixed inset-x-0 top-16 bottom-0 z-50 bg-[var(--bg-main)] border-t border-[var(--border-subtle)] overflow-y-auto px-6 py-6 flex flex-col justify-between"
+          className="lg:hidden fixed inset-0 z-50 flex justify-end"
         >
-          <div className="space-y-6">
-            {/* Mobile Nav Links */}
-            <div className="space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-muted)] font-semibold px-3 mb-2">
-                Navigation
-              </p>
-              {navLinks.map((item) => {
-                const active = isActive(item.href);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-colors ${
-                      active
-                        ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/20'
-                        : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={2} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+          {/* Backdrop blur */}
+          <div
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+          />
+
+          {/* Glass Drawer Panel */}
+          <div className="relative w-full max-w-sm bg-neutral-950/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-l border-white/10 h-full flex flex-col justify-between shadow-2xl z-10 overflow-y-auto p-5 pb-safe animate-in slide-in-from-right duration-300">
+            <div>
+              {/* Top Bar inside Drawer */}
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md">
+                    <BookOpen className="w-4 h-4" strokeWidth={2.2} />
+                  </div>
+                  <div>
+                    <span className="font-serif-display text-lg font-bold text-white">Lumina</span>
+                    <span className="text-[10px] uppercase font-mono tracking-widest text-indigo-400 font-bold block -mt-1">
+                      Comics
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  type="button"
+                  className="p-2 rounded-2xl bg-white/10 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Profile / Account Card inside Drawer */}
+              <div className="my-4">
+                {!isLoading && (
+                  <>
+                    {user ? (
+                      <div className="p-4 rounded-3xl bg-white/5 border border-white/10 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar user={user} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-white truncate">{user.name || 'Reader'}</p>
+                            <p className="text-[11px] text-neutral-400 truncate">{user.email}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <Link
+                            href="/account"
+                            onClick={() => setMobileOpen(false)}
+                            className="text-center py-2 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition-colors"
+                          >
+                            My Account
+                          </Link>
+                          <a
+                            href="/auth/logout"
+                            className="text-center py-2 px-3 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 text-xs font-bold text-rose-300 border border-rose-500/30 transition-colors"
+                          >
+                            Log Out
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-5 rounded-3xl bg-gradient-to-br from-indigo-950/60 via-purple-950/40 to-neutral-900 border border-indigo-500/30 space-y-3 shadow-lg">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-indigo-400" />
+                          <h4 className="text-xs font-extrabold uppercase tracking-wider text-indigo-300">
+                            Welcome Reader
+                          </h4>
+                        </div>
+                        <p className="text-xs text-neutral-300 leading-relaxed">
+                          Sign in to sync your bookmarks, continue reading anywhere, and support your favorite authors.
+                        </p>
+                        <a
+                          href="/auth/login?returnTo=/"
+                          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+                        >
+                          <span>Sign In / Create Account</span>
+                        </a>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Quick Action Pills Grid */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setBmcModalOpen(true);
+                  }}
+                  type="button"
+                  className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-extrabold text-xs shadow-md shadow-amber-400/20 transition-all cursor-pointer"
+                >
+                  <Coffee className="w-4 h-4 fill-neutral-950" />
+                  <span>☕ Tip Creator</span>
+                </button>
+
+                <button
+                  onClick={toggleTheme}
+                  type="button"
+                  className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/10 transition-all cursor-pointer"
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <Sun className="w-4 h-4 text-amber-400" />
+                      <span>Light Mode</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-4 h-4 text-indigo-400" />
+                      <span>Dark Mode</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Navigation Sections */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 font-bold px-3 mb-2">
+                  Explore & Read
+                </p>
+                {navLinks.map((item) => {
+                  const active = isActive(item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                        active
+                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+                          : 'text-neutral-200 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-4 h-4" strokeWidth={active ? 2.5 : 2} />
+                        <span>{item.label}</span>
+                      </div>
+                      {active && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </Link>
+                  );
+                })}
+
+                <Link
+                  href="/author"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:bg-white/5 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Creator Studio Portal</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                    Authors
+                  </span>
+                </Link>
+              </div>
             </div>
 
-            {/* Additional Secondary Links */}
-            <div className="space-y-1 border-t border-[var(--border-subtle)] pt-4">
-              <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-muted)] font-semibold px-3 mb-2">
-                Community & Info
-              </p>
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  setBmcModalOpen(true);
-                }}
-                type="button"
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-neutral-950 bg-amber-400 hover:bg-amber-300 transition-all cursor-pointer"
-              >
-                <Coffee className="w-4 h-4 fill-neutral-950" />
-                <span>☕ Buy Me a Coffee</span>
-              </button>
+            {/* Bottom Info Links */}
+            <div className="pt-4 border-t border-white/10 space-y-1 mt-6">
               <Link
                 href="/donate"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-400 hover:text-white transition-colors"
               >
-                <Heart className="w-4 h-4 text-rose-500" strokeWidth={2} />
-                <span>Support Perks & Membership</span>
+                <Heart className="w-3.5 h-3.5 text-rose-400" />
+                <span>Perks & Memberships</span>
               </Link>
               <Link
                 href="/contact"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-400 hover:text-white transition-colors"
               >
-                <BookOpen className="w-4 h-4 text-indigo-500" strokeWidth={2} />
+                <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Contact & Submissions</span>
               </Link>
+              <p className="text-[10px] text-neutral-500 text-center pt-2">
+                © {new Date().getFullYear()} Lumina Comics. All rights reserved.
+              </p>
             </div>
-          </div>
-
-          {/* Bottom Account Section in Mobile */}
-          <div className="border-t border-[var(--border-subtle)] pt-6 mt-6">
-            {!isLoading && (
-              <>
-                {user ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
-                      <Avatar user={user} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-[var(--text-main)] truncate">
-                          {user.name || 'Reader'}
-                        </p>
-                        <p className="text-xs text-[var(--text-muted)] truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Link
-                        href="/account"
-                        onClick={() => setMobileOpen(false)}
-                        className="text-center py-2.5 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-main)] hover:border-indigo-500 transition-colors"
-                      >
-                        My Account
-                      </Link>
-                      <a
-                        href="/auth/logout"
-                        className="text-center py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs font-semibold text-rose-600 dark:text-rose-400 transition-colors"
-                      >
-                        Log Out
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <a
-                    href="/auth/login?returnTo=/"
-                    className="block w-full text-center py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/20 transition-all"
-                  >
-                    Log In / Sign Up
-                  </a>
-                )}
-              </>
-            )}
           </div>
         </div>
       )}

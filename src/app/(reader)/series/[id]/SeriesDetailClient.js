@@ -568,9 +568,9 @@ export default function SeriesDetailClient({ series, chapters = [], lastReadChap
         </div>
       </div>
 
-      {/* Mobile Sticky Floating CTA Bar for One-Handed Reading */}
+      {/* Mobile Sticky Floating CTA Bar for One-Handed Reading (clears MobileBottomNav) */}
       {firstChapter && (
-        <div className="sm:hidden fixed bottom-14 inset-x-0 z-30 p-3 bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)]/95 to-transparent pointer-events-none flex justify-center pb-safe">
+        <div className="sm:hidden fixed bottom-20 inset-x-0 z-30 p-3 bg-gradient-to-t from-[var(--bg-main)] via-[var(--bg-main)]/95 to-transparent pointer-events-none flex justify-center pb-safe">
           <div className="pointer-events-auto flex items-center gap-2 w-full max-w-sm">
             <Link
               href={`/reader/${series.slug}/${continueTarget}`}

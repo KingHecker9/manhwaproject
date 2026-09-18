@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import SearchModal from '../../components/SearchModal';
+import MobileBottomNav from '../../components/MobileBottomNav';
 
 export default function ReaderLayout({ children }) {
   const pathname = usePathname();
@@ -72,60 +73,10 @@ export default function ReaderLayout({ children }) {
       />
 
       {/* Main Page Body (padding bottom on mobile to accommodate mobile navigation bar) */}
-      <div className={`flex-1 ${!isReaderPage ? 'pb-20 sm:pb-0' : ''}`}>{children}</div>
+      <div className={`flex-1 ${!isReaderPage ? 'pb-24 sm:pb-0' : ''}`}>{children}</div>
 
-      {/* Mobile Bottom Thumb Navigation Bar (Hidden in Webtoons Reader mode) */}
-      {!isReaderPage && (
-        <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--bg-card)]/90 backdrop-blur-xl border-t border-[var(--border-subtle)] pb-safe transition-colors shadow-lg">
-          <div className="flex items-center justify-around h-14 px-2">
-            <Link
-              href="/"
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-                pathname === '/' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
-              }`}
-            >
-              <Compass className="w-5 h-5" strokeWidth={pathname === '/' ? 2.5 : 1.75} />
-              <span className="text-[10px] mt-0.5">Explore</span>
-            </Link>
-
-            <Link
-              href="/#schedule"
-              className="flex flex-col items-center justify-center flex-1 py-1 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
-            >
-              <Calendar className="w-5 h-5" strokeWidth={1.75} />
-              <span className="text-[10px] mt-0.5">Schedule</span>
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="flex flex-col items-center justify-center flex-1 py-1 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
-            >
-              <div className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-xs">
-                <Search className="w-4 h-4" strokeWidth={2.25} />
-              </div>
-            </button>
-
-            <Link
-              href="/#catalog"
-              className="flex flex-col items-center justify-center flex-1 py-1 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
-            >
-              <Layers className="w-5 h-5" strokeWidth={1.75} />
-              <span className="text-[10px] mt-0.5">Library</span>
-            </Link>
-
-            <Link
-              href="/account"
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-                pathname.startsWith('/account') ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
-              }`}
-            >
-              <User className="w-5 h-5" strokeWidth={pathname.startsWith('/account') ? 2.5 : 1.75} />
-              <span className="text-[10px] mt-0.5">Profile</span>
-            </Link>
-          </div>
-        </nav>
-      )}
+      {/* Mobile Bottom Dock Navigation (Hidden in Webtoons Reader mode) */}
+      {!isReaderPage && <MobileBottomNav onOpenSearch={() => setSearchOpen(true)} />}
 
       {/* Polished, Modern Desktop/Mobile Footer */}
       {!isReaderPage && (
@@ -135,8 +86,8 @@ export default function ReaderLayout({ children }) {
               {/* Brand column */}
               <div className="md:col-span-2 space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
-                    <BookOpen className="w-4 h-4" strokeWidth={2} />
+                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                    <BookOpen className="w-4 h-4" strokeWidth={2.2} />
                   </div>
                   <span className="font-serif-display text-xl font-bold tracking-tight text-[var(--text-main)]">
                     Lumina Comics
@@ -192,7 +143,7 @@ export default function ReaderLayout({ children }) {
                 <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
                   <li>
                     <Link href="/about" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      About Studio Reader
+                      About Lumina
                     </Link>
                   </li>
                   <li>
@@ -216,7 +167,7 @@ export default function ReaderLayout({ children }) {
 
             {/* Bottom copyright */}
             <div className="border-t border-[var(--border-subtle)] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[var(--text-muted)] gap-4">
-              <p>© {new Date().getFullYear()} Studio Reader. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Lumina Comics. All rights reserved.</p>
               <p className="flex items-center gap-1.5">
                 <span>Crafted for high definition reading</span>
               </p>

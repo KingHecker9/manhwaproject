@@ -52,7 +52,7 @@ export default function ContinueReading({ seriesList = [], initialHistory = [] }
           <Link
             key={item.id}
             href={`/reader/${item.slug}/${item.lastChapter}`}
-            className="flex items-center gap-3.5 p-3.5 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-indigo-500/40 shadow-xs hover-lift transition-all group"
+            className="flex items-center gap-3.5 p-3.5 rounded-[28px] bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-indigo-500/50 shadow-xs card-expand shimmer-shine transition-all group"
           >
             <div className="relative w-16 h-22 rounded-2xl overflow-hidden bg-[var(--bg-surface)] shrink-0 border border-[var(--border-subtle)]">
               {item.cover ? (
