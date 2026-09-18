@@ -273,7 +273,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 relative">
+    <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 pb-6 sm:pb-10 relative">
       {/* Ambient background glowing orbs */}
       <div className="fixed top-24 left-1/4 w-96 h-96 rounded-full bg-indigo-500/10 dark:bg-indigo-600/5 blur-[120px] pointer-events-none -z-10 animate-pulse-glow" />
       <div className="fixed bottom-32 right-1/4 w-96 h-96 rounded-full bg-purple-500/10 dark:bg-purple-600/5 blur-[120px] pointer-events-none -z-10 animate-float-gentle" />
@@ -469,7 +469,7 @@ export default function CatalogClient({ seriesList = [], userHistory = [] }) {
           />
 
           {/* 9. Explore Full Catalog CTA Box */}
-          <div className="p-8 sm:p-10 rounded-[36px] bg-gradient-to-r from-violet-900/30 via-indigo-900/20 to-purple-900/30 border border-violet-500/20 text-center space-y-4 shadow-xl">
+          <div className="p-6 sm:p-8 rounded-[28px] sm:rounded-[36px] bg-gradient-to-r from-violet-900/30 via-indigo-900/20 to-purple-900/30 border border-violet-500/20 text-center space-y-3.5 shadow-xl">
             <h3 className="font-serif-display text-xl sm:text-2xl font-bold text-white">
               Looking for More Stories?
             </h3>

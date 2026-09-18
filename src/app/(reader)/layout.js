@@ -87,93 +87,94 @@ export default function ReaderLayout({ children }) {
         seriesList={seriesList}
       />
 
-      {/* Main Page Body (padding bottom on mobile to accommodate mobile navigation bar) */}
-      <div className={`flex-1 ${!isReaderPage ? 'pb-24 sm:pb-0' : ''}`}>{children}</div>
+      {/* Main Page Body */}
+      <div className="flex-1">{children}</div>
 
       {/* Mobile Bottom Dock Navigation (Hidden in Webtoons Reader mode) */}
       {!isReaderPage && <MobileBottomNav onOpenSearch={() => setSearchOpen(true)} />}
 
-      {/* Polished, Modern Desktop/Mobile Footer */}
+      {/* Polished, Compact Desktop & Mobile Footer */}
       {!isReaderPage && (
-        <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/50 mt-16 sm:mt-24 transition-colors">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {/* Brand column */}
-              <div className="md:col-span-2 space-y-3">
+        <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/60 mt-8 sm:mt-14 transition-colors">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-24 sm:pb-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+              {/* Brand column: spans full width on mobile, 2 columns on desktop */}
+              <div className="col-span-2 space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
-                    <BookOpen className="w-4 h-4" strokeWidth={2.2} />
+                  <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                    <BookOpen className="w-3.5 h-3.5" strokeWidth={2.4} />
                   </div>
-                  <span className="font-serif-display text-xl font-bold tracking-tight text-[var(--text-main)]">
+                  <span className="font-serif-display text-lg sm:text-xl font-bold tracking-tight text-[var(--text-main)]">
                     Lumina Comics
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] max-w-sm leading-relaxed">
-                  A premium, reader-focused digital comics platform. Read official manhwa chapters with continuous vertical scrolling, responsive layouts, and zero distractions.
+                  A modern, distraction-free digital comic reading experience. High-definition vertical scrolls, real-time release schedules, and creator support.
                 </p>
-                <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pt-1">
-                  <span>Built for creators and avid readers</span>
+                <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] pt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Platform Online & Realtime</span>
                 </div>
               </div>
 
               {/* Navigation links */}
-              <div>
-                <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-main)] font-semibold mb-3">
+              <div className="col-span-1">
+                <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-main)] font-bold mb-2.5">
                   Platform
                 </p>
                 <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
                   <li>
-                    <Link href="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      Home & Featured
+                    <Link href="/" className="hover:text-indigo-500 transition-colors">
+                      Discover
                     </Link>
                   </li>
                   <li>
-                    <Link href="/#schedule" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      Weekly Schedule
+                    <Link href="/#schedule" className="hover:text-indigo-500 transition-colors">
+                      Schedule
                     </Link>
                   </li>
                   <li>
-                    <Link href="/#latest" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      Latest Chapters
+                    <Link href="/#latest" className="hover:text-indigo-500 transition-colors">
+                      Fresh Drops
                     </Link>
                   </li>
                   <li>
-                    <Link href="/#catalog" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      All Series & Genres
+                    <Link href="/#catalog" className="hover:text-indigo-500 transition-colors">
+                      Library
                     </Link>
                   </li>
                   <li>
-                    <Link href="/author" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium text-indigo-500">
-                      Author Portal
+                    <Link href="/author" className="hover:text-indigo-500 transition-colors font-medium text-indigo-500">
+                      Author Studio
                     </Link>
                   </li>
                 </ul>
               </div>
 
               {/* Information links */}
-              <div>
-                <p className="text-xs font-mono uppercase tracking-widest text-[var(--text-main)] font-semibold mb-3">
-                  Information
+              <div className="col-span-1">
+                <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-main)] font-bold mb-2.5">
+                  Explore
                 </p>
                 <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
                   <li>
-                    <Link href="/about" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      About Lumina
+                    <Link href="/about" className="hover:text-indigo-500 transition-colors">
+                      About Us
                     </Link>
                   </li>
                   <li>
-                    <Link href="/donate" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    <Link href="/donate" className="hover:text-indigo-500 transition-colors">
                       Support Creators
                     </Link>
                   </li>
                   <li>
-                    <Link href="/contact" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      Contact & Submissions
+                    <Link href="/contact" className="hover:text-indigo-500 transition-colors">
+                      Contact Us
                     </Link>
                   </li>
                   <li>
-                    <Link href="/account" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                      Reader Account
+                    <Link href="/account" className="hover:text-indigo-500 transition-colors">
+                      My Account
                     </Link>
                   </li>
                 </ul>
@@ -181,10 +182,10 @@ export default function ReaderLayout({ children }) {
             </div>
 
             {/* Bottom copyright */}
-            <div className="border-t border-[var(--border-subtle)] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[var(--text-muted)] gap-4">
+            <div className="border-t border-[var(--border-subtle)] mt-6 sm:mt-8 pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-[var(--text-muted)] gap-2">
               <p>© {new Date().getFullYear()} Lumina Comics. All rights reserved.</p>
               <p className="flex items-center gap-1.5">
-                <span>Crafted for high definition reading</span>
+                <span>Optimized for ultra-smooth 60fps+ reading</span>
               </p>
             </div>
           </div>

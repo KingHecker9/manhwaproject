@@ -347,3 +347,55 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 145, 160, 0.4);
 }
+
+/* ==========================================================================
+   60fps / 120fps Hardware-Accelerated Micro-Animations & Tactile Click Effects
+   ========================================================================== */
+
+/* GPU Compositor layer promotion for zero-jank 60fps/120fps performance */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+/* Tactile Elastic Click/Tap Feedback */
+.btn-press,
+.press-effect {
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease, filter 0.14s ease;
+  transform: translateZ(0);
+}
+
+.btn-press:active,
+.press-effect:active {
+  transform: scale(0.95) translateZ(0);
+  filter: brightness(0.95);
+}
+
+/* Smooth Pro Card Hover with Refresh Rate Optimization */
+.card-hover-pro {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.card-hover-pro:hover {
+  transform: translateY(-4px) translateZ(0);
+}
+
+.card-hover-pro:active {
+  transform: translateY(-1px) scale(0.98) translateZ(0);
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
